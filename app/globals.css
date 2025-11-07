@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, :root {
+  height: 100%;
+}
+
+/* Gallery monthly layout and cards (matches provided design) */
+.modules-month {
+  margin-bottom: 1.75rem;
+}
+.modules-month h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f3f1e0;
+  margin-bottom: 0.5rem;
+}
+.modules-mic-nav {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 640px) {
+  .modules-mic-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .modules-mic-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.modules-days-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.gallery-wrap {
+  background: #212121;
+  color: #f3f1e0;
+  border-radius: 12px;
+  padding: 16px;
+}
+.modules-mic-nav .modules-card {
+  aspect-ratio: 1/1;
+  -webkit-backdrop-filter: blur(.1736111111vw);
+  backdrop-filter: blur(.1736111111vw);
+  background: #f4f2e226;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  color: #f3f1e0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  max-width: 100%;
+  min-height: 0;
+  padding: 1.3888888889vw;
+  transition: all .3s cubic-bezier(.32,.94,.6,1);
+  text-decoration: none;
+}
+@media (any-hover: hover) {
+  .modules-mic-nav .modules-card:hover {
+    background: transparent;
+    border: 2px solid #f3f1e0;
+    color: #f3f1e0;
+  }
+
+  /* Hide scrollbar utility */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+.modules-mic-nav .modules-card.active {
+  background: #fc0;
+  color: #212121;
+}
+@media (any-hover: hover) {
+  .modules-mic-nav .modules-card.active:hover { border: 2px solid #fc0; }
+}
+.modules-mic-nav .modules-card .identifier {
+  font-weight: 700;
+}
+
+/* Support original button selector from provided snippet */
+.modules-mic-nav button {
+  aspect-ratio: 1/1;
+  -webkit-backdrop-filter: blur(.1736111111vw);
+  backdrop-filter: blur(.1736111111vw);
+  background: #f4f2e226;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  color: #f3f1e0;
+  display: flex;
+  flex-direction: column;
+  font-family: AeonikFono-Regular,serif;
+  grid-template-rows: repeat(2,1fr);
+  justify-content: space-between;
+  max-width: 6.6666666667vw;
+  min-height: 6.6666666667vw;
+  padding: 1.3888888889vw;
+  transition: all .3s cubic-bezier(.32,.94,.6,1);
+}
+@media (any-hover: hover) {
+  .modules-mic-nav button:hover {
+    background: transparent;
+    border: 2px solid #f3f1e0;
+    color: #f3f1e0;
+  }
+}
+.modules-mic-nav button.active { background: #fc0; color: #212121; }
+@media (any-hover: hover) { .modules-mic-nav button.active:hover { border: 2px solid #fc0; } }
+
+/* Typography helpers */
+.f-serif-bold { font-family: serif; font-weight: 700; }
+.link { text-decoration: none; }
+
+/* Add no-scrollbar helper to hide scrollbars for horizontal carousels */
+.carousel-horizontal {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.carousel-horizontal::-webkit-scrollbar { display: none; }
+.carousel-horizontal { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Light preview for day tiles */
+.modules-mic-nav .modules-card .thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) brightness(0.65) contrast(0.9);
+  opacity: 0.55;
+  transition: transform .3s cubic-bezier(.32,.94,.6,1), opacity .3s ease;
+}
+@media (any-hover: hover) {
+  .modules-mic-nav .modules-card:hover .thumb {
+    transform: scale(1.04);
+    opacity: 0.65;
+  }
+}
