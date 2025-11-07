@@ -1,6 +1,6 @@
 import { listSnaps, type Snap } from '@/lib/snaps';
 import { notFound } from 'next/navigation';
-import { Carousel, Card } from '@/components/ui/apple-cards-carousel';
+import MonthAppleCarousel, { type DayItem } from '@/components/MonthAppleCarousel';
 
 function isValidDateParam(date: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(date);
@@ -19,50 +19,36 @@ export default async function DayPage({ params }: { params: { date: string } }) 
   const day = d;
 
   const all = await listSnaps();
-  // Compute snaps for the active day
-  const daySnaps: Snap[] = all
-    .filter((s) => (s.updated_at ? sameYMD(new Date(s.updated_at), year, monthIdx, day) : false))
-    .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
-  const hasSnaps = daySnaps.length > 0;
-  // month DayCarousel removed
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
+  const byDay: Record<number, Snap[]> = {} as any;
+  for (let i = 1; i <= daysInMonth; i++) byDay[i] = [];
+  for (const s of all) {
+    if (!s.updated_at) continue;
+    const dt = new Date(s.updated_at);
+    if (dt.getFullYear() === year && dt.getMonth() === monthIdx) {
+      byDay[dt.getDate()].push(s);
+    }
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    byDay[i].sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
+  }
+  const days: DayItem[] = Array.from({ length: daysInMonth }, (_, i) => {
+    const dd = i + 1;
+    const snaps = byDay[dd];
+    return {
+      date: `${year}-${pad(monthIdx + 1)}-${pad(dd)}`,
+      day: dd,
+      has: snaps.length > 0,
+      preview: snaps[0]?.url,
+    };
+  });
 
   return (
     <div className="space-y-8">
       <div className="text-sm"><a href="/" className="text-gray-600 hover:underline">← Back</a></div>
-      <header className="flex items-end justify-between gap-4">
-        <h1 className="text-xl font-semibold">{date}</h1>
-        <div className="text-xs text-gray-500">{daySnaps.length} snap{daySnaps.length > 1 ? 's' : ''}</div>
-      </header>
-
-      {/* Month carousel removed */}
-
-      {/* Apple cards carousel with uploaded snaps */}
-      {hasSnaps ? (
-        <section className="mt-8">
-          <Carousel
-            items={daySnaps.map((s, index) => (
-              <Card
-                key={s.url}
-                index={index}
-                card={{
-                  src: s.url,
-                  title: s.name || `Snap ${index + 1}`,
-                  category: date,
-                  content: (
-                    <div className="py-6 text-sm text-gray-600">
-                      <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline">
-                        Open original
-                      </a>
-                    </div>
-                  ),
-                }}
-              />
-            ))}
-          />
-        </section>
-      ) : (
-        <div className="rounded-md border bg-white p-6 text-sm text-gray-600">No snaps for this date.</div>
-      )}
+      {/* Month Apple carousel over full month; centers current day and updates URL/date smoothly */}
+      <MonthAppleCarousel days={days} initialIndex={day - 1} />
     </div>
   );
 }

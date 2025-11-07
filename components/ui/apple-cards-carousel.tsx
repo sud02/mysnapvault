@@ -19,10 +19,12 @@ import { useOutsideClick } from "@/hooks/use-outside-click";
 interface CarouselProps {
   items: JSX.Element[];
   initialScroll?: number;
+  initialIndex?: number;
+  onActiveIndexChange?: (index: number) => void;
 }
 
-type Card = {
-  src: string;
+type CardData = {
+  src?: string;
   title: string;
   category: string;
   content: React.ReactNode;
@@ -36,24 +38,56 @@ export const CarouselContext = createContext<{
   currentIndex: 0,
 });
 
-export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
+export const Carousel = ({ items, initialScroll = 0, initialIndex, onActiveIndexChange }: CarouselProps) => {
   const carouselRef = React.useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = React.useState(false);
   const [canScrollRight, setCanScrollRight] = React.useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    if (carouselRef.current) {
-      carouselRef.current.scrollLeft = initialScroll;
-      checkScrollability();
+    if (!carouselRef.current) return;
+    const el = carouselRef.current;
+    // If initialIndex provided, center that card
+    if (typeof initialIndex === 'number') {
+      const cardWidth = isMobile() ? 230 : 384;
+      const gap = isMobile() ? 4 : 8;
+      const target = (cardWidth + gap) * initialIndex - Math.max(0, (el.clientWidth - cardWidth) / 2);
+      el.scrollLeft = Math.max(0, target);
+    } else {
+      el.scrollLeft = initialScroll;
     }
-  }, [initialScroll]);
+    checkScrollability();
+    computeActiveIndex();
+  }, [initialScroll, initialIndex]);
 
   const checkScrollability = () => {
     if (carouselRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
       setCanScrollLeft(scrollLeft > 0);
       setCanScrollRight(scrollLeft < scrollWidth - clientWidth);
+    }
+  };
+
+  const computeActiveIndex = () => {
+    const el = carouselRef.current;
+    if (!el) return;
+    const center = el.scrollLeft + el.clientWidth / 2;
+    const nodes = Array.from(el.querySelectorAll('[data-card="1"]')) as HTMLElement[];
+    if (nodes.length === 0) return;
+    let best = 0;
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      const mid = n.offsetLeft + n.offsetWidth / 2;
+      const dist = Math.abs(mid - center);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = i;
+      }
+    }
+    if (best !== currentIndex) {
+      setCurrentIndex(best);
+      onActiveIndexChange?.(best);
     }
   };
 
@@ -94,7 +128,10 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
         <div
           className="flex w-full overflow-x-scroll overscroll-x-auto scroll-smooth py-10 [scrollbar-width:none] md:py-20"
           ref={carouselRef}
-          onScroll={checkScrollability}
+          onScroll={() => {
+            checkScrollability();
+            computeActiveIndex();
+          }}
         >
           <div
             className={cn(
@@ -125,6 +162,8 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
                   },
                 }}
                 key={"card" + index}
+                data-card="1"
+                data-index={index}
                 className="rounded-3xl last:pr-[5%] md:last:pr-[33%]"
               >
                 {item}
@@ -157,12 +196,15 @@ export const Card = ({
   card,
   index,
   layout = false,
+  href,
 }: {
-  card: Card;
+  card: CardData;
   index: number;
   layout?: boolean;
+  href?: string;
 }) => {
   const [open, setOpen] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { onCardClose, currentIndex } = useContext(CarouselContext);
 
@@ -186,6 +228,13 @@ export const Card = ({
   useOutsideClick(containerRef, () => handleClose());
 
   const handleOpen = () => {
+    if (href) {
+      window.location.href = href;
+      return;
+    }
+    if (!card.src) {
+      return; // placeholder card, do nothing
+    }
     setOpen(true);
   };
 
@@ -239,7 +288,10 @@ export const Card = ({
       <motion.button
         layoutId={layout ? `card-${card.title}` : undefined}
         onClick={handleOpen}
-        className="relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-gray-100 md:h-[40rem] md:w-96 dark:bg-neutral-900"
+        className={cn(
+          "relative z-10 flex w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-gray-100 md:w-96 dark:bg-neutral-900",
+          isLandscape ? "h-96 md:h-[44rem]" : "h-80 md:h-[40rem]",
+        )}
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-gradient-to-b from-black/50 via-transparent to-transparent" />
         <div className="relative z-40 p-8">
@@ -256,12 +308,27 @@ export const Card = ({
             {card.title}
           </motion.p>
         </div>
-        <BlurImage
-          src={card.src}
-          alt={card.title}
-          fill
-          className="absolute inset-0 z-10 h-full w-full object-contain bg-white"
-        />
+        {card.src ? (
+          <BlurImage
+            src={card.src}
+            alt={card.title}
+            fill
+            onLoad={(e) => {
+              const img = e.currentTarget as HTMLImageElement;
+              if (img && img.naturalWidth && img.naturalHeight) {
+                setIsLandscape(img.naturalWidth > img.naturalHeight);
+              }
+            }}
+            className={cn(
+              "absolute inset-0 z-10 h-full w-full bg-white",
+              isLandscape ? "object-cover scale-110" : "object-contain",
+            )}
+          />
+        ) : (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-200 text-gray-600 text-sm">
+            not today
+          </div>
+        )}
       </motion.button>
     </>
   );
@@ -278,9 +345,17 @@ export const BlurImage = ({
   className,
   alt,
   fill: _fill,
+  onLoad: onLoadProp,
   ...rest
 }: BlurImageProps) => {
   const [isLoading, setLoading] = useState(true);
+  const handleLoad = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    try {
+      onLoadProp?.(e);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <img
       className={cn(
@@ -288,7 +363,7 @@ export const BlurImage = ({
         isLoading ? "blur-sm" : "blur-0",
         className,
       )}
-      onLoad={() => setLoading(false)}
+      onLoad={handleLoad}
       src={src as string}
       width={width as any}
       height={height as any}
