@@ -27,7 +27,7 @@ export default async function Page() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Public Gallery</h1>
-      <div className="gallery-wrap">
+      <div className="gallery-wrap fit-viewport">
         <section className="modules-month" key={currentMonth}>
           <h2>
             {monthName(currentMonth)} {year}
@@ -40,14 +40,16 @@ export default async function Page() {
                 <a
                   key={day}
                   href={has ? `/day/${year}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` : undefined}
-                  className={`modules-card ${has ? 'active cursor-pointer relative overflow-hidden' : ''}`}
+                  className={`modules-card relative overflow-hidden ${has ? 'active cursor-pointer' : ''}`}
                   aria-label={`Open ${year}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`}
                 >
-                  {has && (
+                  {has ? (
                     <img src={daySnaps[0].url} alt="" className="thumb" />
+                  ) : (
+                    <span className="absolute inset-0 flex items-center justify-center text-xl sm:text-xl md:text-xl font-semibold">
+                      {String(day).padStart(2, '0')}
+                    </span>
                   )}
-                  <span className="f-serif-bold link relative z-10">{String(day).padStart(2, '0')}</span>
-                  <span className="identifier f-serif-bold link relative z-10">{has ? `${daySnaps.length} snaps` : 'Empty'}</span>
                 </a>
               );
             })}

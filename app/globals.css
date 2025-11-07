@@ -6,6 +6,13 @@ html, body, :root {
   height: 100%;
 }
 
+/* Constrain the gallery width so 5 rows of 7 tiles fit viewport height */
+.fit-viewport {
+  max-width: calc((100svh - 220px) / 5 * 7);
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* Gallery monthly layout and cards (matches provided design) */
 .modules-month {
   margin-bottom: 1.75rem;
@@ -18,7 +25,7 @@ html, body, :root {
 }
 .modules-mic-nav {
   display: grid;
-  gap: 12px;
+  gap: 6px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 @media (min-width: 640px) {
@@ -32,7 +39,7 @@ html, body, :root {
   /* liquid glass container */
   background: radial-gradient(1200px 600px at 20% -10%, rgba(255,255,255,0.08), transparent),
               radial-gradient(800px 400px at 100% 10%, rgba(255,255,255,0.06), transparent),
-              rgba(0,0,0,0.35);
+              #222;
   color: #f3f1e0;
   border-radius: 16px;
   padding: 16px;
@@ -54,7 +61,7 @@ html, body, :root {
   justify-content: space-between;
   max-width: 100%;
   min-height: 0;
-  padding: 1.3888888889vw;
+  padding: 6px;
   transition: all .3s cubic-bezier(.32,.94,.6,1);
   text-decoration: none;
   box-shadow: 0 10px 30px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(255,255,255,0.06);
@@ -87,8 +94,8 @@ html, body, :root {
 /* Support original button selector from provided snippet */
 .modules-mic-nav button {
   aspect-ratio: 1/1;
-  -webkit-backdrop-filter: blur(.1736111111vw);
-  backdrop-filter: blur(.1736111111vw);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   background: #f4f2e226;
   border: 2px solid transparent;
   border-radius: 5px;
@@ -98,9 +105,9 @@ html, body, :root {
   font-family: AeonikFono-Regular,serif;
   grid-template-rows: repeat(2,1fr);
   justify-content: space-between;
-  max-width: 6.6666666667vw;
-  min-height: 6.6666666667vw;
-  padding: 1.3888888889vw;
+  max-width: 80px;
+  min-height: 80px;
+  padding: 6px;
   transition: all .3s cubic-bezier(.32,.94,.6,1);
 }
 @media (any-hover: hover) {
