@@ -8,7 +8,8 @@ html, body, :root {
 
 /* Constrain the gallery width so 5 rows of 7 tiles fit viewport height */
 .fit-viewport {
-  max-width: calc((100svh - 220px) / 5 * 7);
+  /* target 6 rows instead of 5 to make tiles smaller */
+  max-width: calc((100svh - 220px) / 6 * 7);
   margin-left: auto;
   margin-right: auto;
 }
@@ -25,7 +26,7 @@ html, body, :root {
 }
 .modules-mic-nav {
   display: grid;
-  gap: 6px;
+  gap: 4px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 @media (min-width: 640px) {
@@ -61,7 +62,7 @@ html, body, :root {
   justify-content: space-between;
   max-width: 100%;
   min-height: 0;
-  padding: 6px;
+  padding: 4px;
   transition: all .3s cubic-bezier(.32,.94,.6,1);
   text-decoration: none;
   box-shadow: 0 10px 30px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(255,255,255,0.06);

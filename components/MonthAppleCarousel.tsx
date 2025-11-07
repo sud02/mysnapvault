@@ -19,7 +19,7 @@ export default function MonthAppleCarousel({
         <Card
           key={d.date}
           index={index}
-          href={d.has ? `/day/${d.date}` : undefined}
+          layout
           card={{
             src: d.preview,
             title: String(d.day).padStart(2, '0'),
@@ -47,10 +47,8 @@ export default function MonthAppleCarousel({
   return (
     <section className="space-y-4">
       <header className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">{days[active]?.date}</h2>
-        <span className="text-xs text-gray-500">
-          {days[active]?.has ? 'Has snaps' : 'not today'}
-        </span>
+        <h2 className="text-lg font-semibold text-gray-900">{days[active]?.date}</h2>
+        <span className="text-xs text-gray-500">{days[active]?.has ? 'Has snaps' : 'not today'}</span>
       </header>
       <Carousel
         items={items}
