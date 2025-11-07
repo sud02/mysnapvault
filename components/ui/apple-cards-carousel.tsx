@@ -331,8 +331,7 @@ export const Card = ({
               }
             }}
             className={cn(
-              "absolute inset-0 z-10 h-full w-full bg-white",
-              isLandscape ? "object-cover scale-110" : "object-contain",
+              "absolute inset-0 z-10 h-full w-full bg-white object-cover",
             )}
           />
         ) : (
@@ -371,7 +370,7 @@ export const BlurImage = ({
     <img
       className={cn(
         "transition duration-300",
-        isLoading ? "blur-sm" : "blur-0",
+        isLoading ? "blur-0" : "blur-0",
         className,
       )}
       onLoad={handleLoad}
