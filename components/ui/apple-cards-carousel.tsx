@@ -43,16 +43,26 @@ export const Carousel = ({ items, initialScroll = 0, initialIndex, onActiveIndex
   const [canScrollLeft, setCanScrollLeft] = React.useState(false);
   const [canScrollRight, setCanScrollRight] = React.useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollTimeout = React.useRef<number | null>(null);
+
+  function centerToIndex(index: number, behavior: ScrollBehavior = 'smooth') {
+    const el = carouselRef.current;
+    if (!el) return;
+    const node = el.querySelector(`[data-card="1"][data-index="${index}"]`) as HTMLElement | null;
+    if (!node) return;
+    const rect = node.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    const targetLeft = el.scrollLeft + (rect.left - elRect.left) - (el.clientWidth / 2 - rect.width / 2);
+    el.scrollTo({ left: Math.max(0, targetLeft), behavior });
+  }
 
   useEffect(() => {
     if (!carouselRef.current) return;
     const el = carouselRef.current;
-    // If initialIndex provided, center that card
     if (typeof initialIndex === 'number') {
-      const cardWidth = isMobile() ? 230 : 384;
-      const gap = isMobile() ? 4 : 8;
-      const target = (cardWidth + gap) * initialIndex - Math.max(0, (el.clientWidth - cardWidth) / 2);
-      el.scrollLeft = Math.max(0, target);
+      // Center precisely to the initial index on mount
+      // Delay to ensure nodes are laid out
+      setTimeout(() => centerToIndex(initialIndex, 'auto'), 0);
     } else {
       el.scrollLeft = initialScroll;
     }
@@ -68,17 +78,19 @@ export const Carousel = ({ items, initialScroll = 0, initialIndex, onActiveIndex
     }
   };
 
-  const computeActiveIndex = () => {
+  const computeActiveIndex = (): number => {
     const el = carouselRef.current;
-    if (!el) return;
+    if (!el) return currentIndex;
     const center = el.scrollLeft + el.clientWidth / 2;
     const nodes = Array.from(el.querySelectorAll('[data-card="1"]')) as HTMLElement[];
-    if (nodes.length === 0) return;
+    if (nodes.length === 0) return currentIndex;
     let best = 0;
     let bestDist = Number.POSITIVE_INFINITY;
     for (let i = 0; i < nodes.length; i++) {
       const n = nodes[i];
-      const mid = n.offsetLeft + n.offsetWidth / 2;
+      const r = n.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const mid = el.scrollLeft + (r.left - elRect.left) + r.width / 2;
       const dist = Math.abs(mid - center);
       if (dist < bestDist) {
         bestDist = dist;
@@ -89,18 +101,17 @@ export const Carousel = ({ items, initialScroll = 0, initialIndex, onActiveIndex
       setCurrentIndex(best);
       onActiveIndexChange?.(best);
     }
+    return best;
   };
 
   const scrollLeft = () => {
-    if (carouselRef.current) {
-      carouselRef.current.scrollBy({ left: -300, behavior: "smooth" });
-    }
+    const next = Math.max(0, currentIndex - 1);
+    centerToIndex(next, 'smooth');
   };
 
   const scrollRight = () => {
-    if (carouselRef.current) {
-      carouselRef.current.scrollBy({ left: 300, behavior: "smooth" });
-    }
+    const next = Math.min(items.length - 1, currentIndex + 1);
+    centerToIndex(next, 'smooth');
   };
 
   const handleCardClose = (index: number) => {
@@ -130,7 +141,11 @@ export const Carousel = ({ items, initialScroll = 0, initialIndex, onActiveIndex
           ref={carouselRef}
           onScroll={() => {
             checkScrollability();
-            computeActiveIndex();
+            const idx = computeActiveIndex();
+            if (scrollTimeout.current) window.clearTimeout(scrollTimeout.current);
+            scrollTimeout.current = window.setTimeout(() => {
+              centerToIndex(idx, 'smooth');
+            }, 150);
           }}
         >
           <div
@@ -158,7 +173,6 @@ export const Carousel = ({ items, initialScroll = 0, initialIndex, onActiveIndex
                     duration: 0.5,
                     delay: 0.2 * index,
                     ease: "easeOut",
-                    once: true,
                   },
                 }}
                 key={"card" + index}
@@ -173,18 +187,18 @@ export const Carousel = ({ items, initialScroll = 0, initialIndex, onActiveIndex
         </div>
         <div className="mr-10 flex justify-end gap-2">
           <button
-            className="relative z-40 flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 disabled:opacity-50"
+            className="relative z-40 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white disabled:opacity-50"
             onClick={scrollLeft}
             disabled={!canScrollLeft}
           >
-            <IconArrowNarrowLeft className="h-6 w-6 text-gray-500" />
+            <IconArrowNarrowLeft className="h-6 w-6" />
           </button>
           <button
-            className="relative z-40 flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 disabled:opacity-50"
+            className="relative z-40 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white disabled:opacity-50"
             onClick={scrollRight}
             disabled={!canScrollRight}
           >
-            <IconArrowNarrowRight className="h-6 w-6 text-gray-500" />
+            <IconArrowNarrowRight className="h-6 w-6" />
           </button>
         </div>
       </div>
@@ -289,8 +303,9 @@ export const Card = ({
         layoutId={layout ? `card-${card.title}` : undefined}
         onClick={handleOpen}
         className={cn(
-          "relative z-10 flex w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-gray-100 md:w-96 dark:bg-neutral-900",
+          "relative z-10 flex w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-white/10 md:w-96 dark:bg-white/10",
           isLandscape ? "h-96 md:h-[44rem]" : "h-80 md:h-[40rem]",
+          currentIndex === index ? "ring-2 ring-[#FFCC00] shadow-[0_10px_30px_rgba(255,204,0,0.25)]" : "",
         )}
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-gradient-to-b from-black/50 via-transparent to-transparent" />
@@ -325,7 +340,7 @@ export const Card = ({
             )}
           />
         ) : (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-200 text-gray-600 text-sm">
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/10 text-white/80 text-sm">
             not today
           </div>
         )}

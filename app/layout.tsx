@@ -9,13 +9,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-gray-50 text-gray-900">
-        <header className="border-b bg-white">
+      <body className="min-h-screen bg-gradient-to-b from-black via-black to-neutral-900 text-white selection:bg-white/20 selection:text-white">
+        <header className="border-b border-white/10 bg-white/5 backdrop-blur-md">
           <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
             <a href="/" className="text-xl font-semibold">MySnapVault</a>
             <nav className="space-x-4">
-              <a href="/" className="text-sm text-gray-600 hover:text-gray-900">Gallery</a>
-              <a href="/upload" className="text-sm text-gray-600 hover:text-gray-900">Upload</a>
+              <a href="/" className="text-sm text-white/70 hover:text-white">Gallery</a>
+              <a href="/upload" className="text-sm text-white/70 hover:text-white">Upload</a>
             </nav>
           </div>
         </header>
