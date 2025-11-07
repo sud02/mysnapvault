@@ -8,14 +8,10 @@ html, body, :root {
 
 /* Constrain the gallery width so 5 rows of 7 tiles fit viewport height */
 .fit-viewport {
-  /* Keep container width constant based on a base rows count */
-  --base-rows: 6;
-  --rows: 6; /* current rows driven by stepper */
-  --tile-scale: calc(var(--base-rows) / var(--rows));
-  max-width: calc((100svh - 220px) / var(--base-rows) * 7);
+  /* target 6 rows instead of 5 to make tiles smaller */
+  max-width: calc((100svh - 220px) / 6 * 7);
   margin-left: auto;
   margin-right: auto;
-  transition: max-width 250ms cubic-bezier(.22,.61,.36,1);
 }
 
 /* Gallery monthly layout and cards (matches provided design) */
@@ -40,7 +36,6 @@ html, body, :root {
   .modules-mic-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 .modules-days-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
-.modules-mic-nav { place-items: center; }
 .gallery-wrap {
   /* liquid glass container */
   background: radial-gradient(1200px 600px at 20% -10%, rgba(255,255,255,0.08), transparent),
@@ -68,9 +63,6 @@ html, body, :root {
   max-width: 100%;
   min-height: 0;
   padding: 4px;
-  transform: scale(var(--tile-scale));
-  transform-origin: center;
-  transition: transform 200ms cubic-bezier(.22,.61,.36,1), background .3s, border-color .3s, box-shadow .3s;
   transition: all .3s cubic-bezier(.32,.94,.6,1);
   text-decoration: none;
   box-shadow: 0 10px 30px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(255,255,255,0.06);

@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic';
 
 import { listSnaps, type Snap } from '@/lib/snaps';
-import GridContainerWithStepper from '@/components/GridContainerWithStepper';
 // Reverted: using monthly day grid view
 
 export default async function Page() {
@@ -28,7 +27,7 @@ export default async function Page() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold text-center">Snap Of The Day</h1>
-      <GridContainerWithStepper>
+      <div className="gallery-wrap fit-viewport">
         <section className="modules-month" key={currentMonth}>
           <h2>
             {monthName(currentMonth)} {year}
@@ -56,7 +55,7 @@ export default async function Page() {
             })}
           </div>
         </section>
-      </GridContainerWithStepper>
+      </div>
     </div>
   );
 }
