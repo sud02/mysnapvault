@@ -16,7 +16,7 @@ export default function GridContainerWithStepper({ children }: { children: React
       className="relative gallery-wrap fit-viewport"
       style={{ ["--rows" as any]: String(rows) }}
     >
-      {children}
+      <div className="pr-14 pb-14">{children}</div>
       <div className="pointer-events-none absolute bottom-3 right-3 z-20">
         <div className="inline-flex items-center rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm pointer-events-auto">
           <button
