@@ -24,11 +24,7 @@ export default function MonthAppleCarousel({
             src: d.preview,
             title: String(d.day).padStart(2, '0'),
             category: d.date,
-            content: d.has ? (
-              <div className="py-6 text-sm text-gray-600">Has snaps</div>
-            ) : (
-              <div className="py-6 text-sm text-gray-600">No snaps for this day</div>
-            ),
+            content: <div className="py-6 text-sm text-gray-600">No snaps for this day</div>,
           }}
         />
       )),
@@ -48,7 +44,6 @@ export default function MonthAppleCarousel({
     <section className="space-y-4">
       <header className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">{days[active]?.date}</h2>
-        <span className="text-xs text-gray-500">{days[active]?.has ? 'Has snaps' : 'not today'}</span>
       </header>
       <Carousel
         items={items}

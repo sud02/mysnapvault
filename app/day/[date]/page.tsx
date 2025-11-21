@@ -46,7 +46,15 @@ export default async function DayPage({ params }: { params: { date: string } }) 
 
   return (
     <div className="space-y-8">
-      <div className="text-sm"><a href="/" className="text-gray-600 hover:underline">← Back</a></div>
+      <div>
+        <a href="/" className="button" aria-label="Go back">
+          <span className="button-box">
+            <svg className="button-elem" viewBox="0 0 46 40" aria-hidden="true">
+              <path d="M29 10 L17 23 L29 36" strokeWidth="3" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </a>
+      </div>
       {/* Month Apple carousel over full month; centers current day and updates URL/date smoothly */}
       <MonthAppleCarousel days={days} initialIndex={day - 1} />
     </div>
