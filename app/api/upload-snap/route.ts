@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       addRandomSuffix: false,
       cacheControlMaxAge: 60 * 60 * 24 * 30,
     });
-    return NextResponse.json({ path: blob.pathname, url: blob.url, uploadedAt: blob.uploadedAt }, { status: 200 });
+    return NextResponse.json({ path: blob.pathname, url: blob.url, uploadedAt: new Date().toISOString() }, { status: 200 });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'Server error' }, { status: 500 });
   }
