@@ -169,12 +169,6 @@ html, body, :root {
 }
 
 
-.button:hover,
-.button:focus-visible {
-  background: linear-gradient(180deg, #202024 0%, #09090c 100%);
-  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.38), inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
-}
-
 .button:hover::before,
 .button:focus-visible::before {
   opacity: 1;
@@ -186,13 +180,8 @@ html, body, :root {
   transition: transform 0.3s ease;
 }
 
-.button:hover .button-box,
-.button:focus-visible .button-box {
-  transform: translateX(-4px);
-}
-
 .button .button-elem {
-  height: 20px;
+  height: 24px;
   padding-bottom: 3px;
   padding-right: 2px;
   transition: transform 0.3s ease;
@@ -200,7 +189,7 @@ html, body, :root {
 
 .button .button-elem path {
   stroke: currentColor;
-  stroke-width: 2.8;
+  stroke-width: 4.8;
   stroke-linecap: round;
   stroke-linejoin: round;
   fill: none;
