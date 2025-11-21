@@ -1,6 +1,8 @@
+import Image from 'next/image';
 import { listSnaps, type Snap } from '@/lib/snaps';
 import { notFound } from 'next/navigation';
-import MonthAppleCarousel, { type DayItem } from '@/components/MonthAppleCarousel';
+
+type DayItem = { date: string; day: number; has: boolean; preview?: string };
 
 function isValidDateParam(date: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(date);
@@ -44,6 +46,12 @@ export default async function DayPage({ params }: { params: { date: string } }) 
     };
   });
 
+  const monthLabel = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(
+    new Date(year, monthIdx, 1)
+  );
+  const selectedSnaps = byDay[day] ?? [];
+  const selectedDayLabel = `${year}-${pad(monthIdx + 1)}-${pad(day)}`;
+
   return (
     <div className="space-y-8">
       <div>
@@ -55,8 +63,71 @@ export default async function DayPage({ params }: { params: { date: string } }) 
           </span>
         </a>
       </div>
-      {/* Month Apple carousel over full month; centers current day and updates URL/date smoothly */}
-      <MonthAppleCarousel days={days} initialIndex={day - 1} />
+      <section className="space-y-4">
+        <div className="flex items-center justify-between text-sm text-gray-300">
+          <div>{monthLabel}</div>
+          <div className="text-gray-400">Tap a day to jump</div>
+        </div>
+        <div className="modules-mic-nav modules-days-grid max-h-[70vh] overflow-y-auto no-scrollbar pr-1">
+          {days
+            .slice()
+            .reverse()
+            .map((item) => {
+              const href = item.has ? `/day/${item.date}` : undefined;
+              const isSelected = item.day === day;
+              return (
+                <a
+                  key={item.date}
+                  href={href}
+                  className={`modules-card relative overflow-hidden ${item.has ? 'active cursor-pointer' : ''} ${
+                    isSelected ? 'ring-2 ring-[#FFCC00]' : ''
+                  }`}
+                  aria-label={`Open ${item.date}`}
+                >
+                  {item.has && item.preview ? (
+                    <Image
+                      src={item.preview}
+                      alt=""
+                      fill
+                      sizes="(max-width: 640px) 22vw, (max-width: 1024px) 14vw, 11vw"
+                      className="thumb"
+                      priority={isSelected}
+                    />
+                  ) : (
+                    <span className="absolute inset-0 flex items-center justify-center text-xl sm:text-xl md:text-xl font-semibold">
+                      {String(item.day).padStart(2, '0')}
+                    </span>
+                  )}
+                </a>
+              );
+            })}
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-gray-100">{selectedDayLabel}</h2>
+        {selectedSnaps.length > 0 ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {selectedSnaps.map((snap, idx) => (
+              <figure
+                key={snap.url + idx}
+                className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-white/10 bg-black/20"
+              >
+                <Image
+                  src={snap.url}
+                  alt={snap.name}
+                  fill
+                  sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 33vw"
+                  className="object-cover"
+                  priority={idx === 0}
+                />
+              </figure>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400">No snaps for this day yet.</p>
+        )}
+      </section>
     </div>
   );
 }

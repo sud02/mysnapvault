@@ -17,6 +17,7 @@ html, body, :root {
 /* Gallery monthly layout and cards (matches provided design) */
 .modules-month {
   margin-bottom: 1.75rem;
+  position: relative;
 }
 .modules-month h2 {
   font-size: 0.95rem;
@@ -90,6 +91,37 @@ html, body, :root {
 }
 .modules-mic-nav .modules-card .identifier {
   font-weight: 700;
+}
+
+/* Month badge inside calendar grid */
+.modules-month.has-title {
+  padding-top: 3rem;
+}
+
+.month-title {
+  position: absolute;
+  top: -0.1rem;
+  left: 0rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f3f1e0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.month-title .month-year {
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
 /* Support original button selector from provided snippet */
