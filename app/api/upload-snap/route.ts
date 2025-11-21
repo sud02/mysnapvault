@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { BUCKET, getSupabaseAdmin } from '@/lib/supabaseServer';
+import { put } from '@vercel/blob';
 
 export const runtime = 'nodejs';
 
@@ -23,16 +23,14 @@ export async function POST(request: Request) {
   const rand = Math.random().toString(36).slice(2, 8);
   const path = `${ts}-${rand}${safeExt ? '.' + safeExt : ''}`;
   try {
-    const supabase = getSupabaseAdmin();
-    const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+    const arrayBuffer = await file.arrayBuffer();
+    const blob = await put(path, arrayBuffer, {
+      access: 'public',
       contentType: file.type || 'application/octet-stream',
-      upsert: false,
+      addRandomSuffix: false,
+      cacheControlMaxAge: 60 * 60 * 24 * 30,
     });
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-    return NextResponse.json({ path, url: data.publicUrl }, { status: 200 });
+    return NextResponse.json({ path: blob.pathname, url: blob.url, uploadedAt: blob.uploadedAt }, { status: 200 });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'Server error' }, { status: 500 });
   }
