@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import React, {
   useEffect,
   useRef,
@@ -299,10 +300,14 @@ export const Card = ({
                 <IconX className="h-6 w-6 text-white" />
               </button>
               {card.src ? (
-                <img
+                <Image
                   src={card.src}
                   alt={card.title}
+                  width={1600}
+                  height={900}
                   className="max-h-[85vh] max-w-[90vw] object-contain rounded-2xl"
+                  sizes="90vw"
+                  priority
                 />
               ) : null}
             </motion.div>
@@ -321,20 +326,22 @@ export const Card = ({
         <div className="hidden" />
         <div className="hidden" />
         {card.src ? (
-          <BlurImage
-            src={card.src}
-            alt={card.title}
-            fill
-            onLoad={(e) => {
-              const img = e.currentTarget as HTMLImageElement;
-              if (img && img.naturalWidth && img.naturalHeight) {
-                setIsLandscape(img.naturalWidth > img.naturalHeight);
-              }
-            }}
-            className={cn(
-              "absolute inset-0 z-10 h-full w-full bg-white object-cover",
-            )}
-          />
+          <div className="absolute inset-0 z-10 h-full w-full">
+            <Image
+              src={card.src}
+              alt={card.title}
+              fill
+              className="absolute inset-0 h-full w-full object-cover"
+              sizes="(max-width: 768px) 70vw, (max-width: 1200px) 40vw, 400px"
+              onLoad={(e) => {
+                const img = e.target as HTMLImageElement;
+                if (img && img.naturalWidth && img.naturalHeight) {
+                  setIsLandscape(img.naturalWidth > img.naturalHeight);
+                }
+              }}
+              priority={index < 3}
+            />
+          </div>
         ) : (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100 text-gray-600 text-sm">
             not today
@@ -342,44 +349,5 @@ export const Card = ({
         )}
       </motion.button>
     </>
-  );
-};
-
-type BlurImageProps = React.ImgHTMLAttributes<HTMLImageElement> & {
-  fill?: boolean;
-};
-
-export const BlurImage = ({
-  height,
-  width,
-  src,
-  className,
-  alt,
-  fill: _fill,
-  onLoad: onLoadProp,
-  ...rest
-}: BlurImageProps) => {
-  const [isLoading, setLoading] = useState(true);
-  const handleLoad = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    try {
-      onLoadProp?.(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-  return (
-    <img
-      className={cn(
-        "transition duration-300",
-        isLoading ? "blur-0" : "blur-0",
-        className,
-      )}
-      onLoad={handleLoad}
-      src={src as string}
-      width={width as any}
-      height={height as any}
-      alt={alt ? (alt as string) : "Background of a beautiful view"}
-      {...rest}
-    />
   );
 };

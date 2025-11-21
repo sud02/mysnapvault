@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import Image from 'next/image';
 import { listSnaps, type Snap } from '@/lib/snaps';
 // Reverted: using monthly day grid view
 
@@ -8,6 +9,7 @@ export default async function Page() {
   const now = new Date();
   const year = now.getFullYear();
   const currentMonth = now.getMonth();
+  const currentDay = now.getDate();
   const daysInMonth = (m: number) => new Date(year, m + 1, 0).getDate();
   const byMonthDay: Record<number, Record<number, Snap[]>> = {} as any;
   for (let m = 0; m < 12; m++) {
@@ -44,7 +46,14 @@ export default async function Page() {
                   aria-label={`Open ${year}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`}
                 >
                   {has ? (
-                    <img src={daySnaps[0].url} alt="" className="thumb" />
+                    <Image
+                      src={daySnaps[0].url}
+                      alt=""
+                      fill
+                      sizes="(max-width: 640px) 22vw, (max-width: 1024px) 14vw, 11vw"
+                      className="thumb"
+                      priority={day === currentDay}
+                    />
                   ) : (
                     <span className="absolute inset-0 flex items-center justify-center text-xl sm:text-xl md:text-xl font-semibold">
                       {String(day).padStart(2, '0')}
