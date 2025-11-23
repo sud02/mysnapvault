@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Carousel, Card } from '@/components/ui/apple-cards-carousel';
 
 export type DayItem = { date: string; day: number; has: boolean; preview?: string };
@@ -45,11 +45,14 @@ export default function MonthAppleCarousel({
       <header className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">{days[active]?.date}</h2>
       </header>
-      <Carousel
-        items={items}
-        initialIndex={initialIndex}
-        onActiveIndexChange={onActiveIndexChange}
-      />
+      <div className="relative">
+        <Carousel
+          items={items}
+          initialIndex={initialIndex}
+          onActiveIndexChange={onActiveIndexChange}
+          disableInitialAnimation
+        />
+      </div>
     </section>
   );
 }

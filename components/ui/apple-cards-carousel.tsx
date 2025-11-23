@@ -22,6 +22,7 @@ interface CarouselProps {
   initialScroll?: number;
   initialIndex?: number;
   onActiveIndexChange?: (index: number) => void;
+  disableInitialAnimation?: boolean;
 }
 
 type CardData = {
@@ -39,13 +40,15 @@ export const CarouselContext = createContext<{
   currentIndex: 0,
 });
 
-export const Carousel = ({ items, initialScroll = 0, initialIndex, onActiveIndexChange }: CarouselProps) => {
+export const Carousel = ({ items, initialScroll = 0, initialIndex, onActiveIndexChange, disableInitialAnimation }: CarouselProps) => {
   const carouselRef = React.useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = React.useState(false);
   const [canScrollRight, setCanScrollRight] = React.useState(true);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(typeof initialIndex === 'number' ? initialIndex : 0);
   const scrollTimeout = React.useRef<number | null>(null);
   const suppressSnapUntil = React.useRef<number>(0);
+  const initialisedRef = React.useRef(false);
+  const [ready, setReady] = useState(false);
 
   function centerToIndex(index: number, behavior: ScrollBehavior = 'smooth') {
     const el = carouselRef.current;
@@ -61,15 +64,32 @@ export const Carousel = ({ items, initialScroll = 0, initialIndex, onActiveIndex
   useEffect(() => {
     if (!carouselRef.current) return;
     const el = carouselRef.current;
+    const targetIndex = typeof initialIndex === 'number' ? initialIndex : 0;
+
+    initialisedRef.current = false;
+    setReady(false);
+
     if (typeof initialIndex === 'number') {
-      // Center precisely to the initial index on mount
-      // Delay to ensure nodes are laid out
-      setTimeout(() => centerToIndex(initialIndex, 'auto'), 0);
+      requestAnimationFrame(() => {
+        centerToIndex(targetIndex, 'auto');
+        setCurrentIndex(targetIndex);
+        checkScrollability();
+        initialisedRef.current = true;
+        setReady(true);
+      });
     } else {
       el.scrollLeft = initialScroll;
+      checkScrollability();
+      initialisedRef.current = true;
+      setReady(true);
+      computeActiveIndex(false);
     }
-    checkScrollability();
-    computeActiveIndex();
+
+    return () => {
+      if (scrollTimeout.current) window.clearTimeout(scrollTimeout.current);
+      initialisedRef.current = false;
+      setReady(false);
+    };
   }, [initialScroll, initialIndex]);
 
   const checkScrollability = () => {
@@ -80,7 +100,7 @@ export const Carousel = ({ items, initialScroll = 0, initialIndex, onActiveIndex
     }
   };
 
-  const computeActiveIndex = (): number => {
+  const computeActiveIndex = (notify = true): number => {
     const el = carouselRef.current;
     if (!el) return currentIndex;
     const center = el.scrollLeft + el.clientWidth / 2;
@@ -101,7 +121,7 @@ export const Carousel = ({ items, initialScroll = 0, initialIndex, onActiveIndex
     }
     if (best !== currentIndex) {
       setCurrentIndex(best);
-      onActiveIndexChange?.(best);
+      if (notify) onActiveIndexChange?.(best);
     }
     return best;
   };
@@ -129,12 +149,18 @@ export const Carousel = ({ items, initialScroll = 0, initialIndex, onActiveIndex
     <CarouselContext.Provider
       value={{ onCardClose: handleCardClose, currentIndex }}
     >
-      <div className="relative w-full">
+      <div
+        className={cn(
+          "relative w-full transition-opacity duration-200",
+          ready ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+      >
         <div
           className="flex w-full overflow-x-scroll overscroll-x-auto scroll-smooth py-10 [scrollbar-width:none] md:py-10"
           ref={carouselRef}
           onScroll={() => {
             checkScrollability();
+            if (!initialisedRef.current) return;
             const idx = computeActiveIndex();
             if (Date.now() < suppressSnapUntil.current) {
               return;
@@ -155,11 +181,11 @@ export const Carousel = ({ items, initialScroll = 0, initialIndex, onActiveIndex
           >
             {items.map((item, index) => (
               <motion.div
-                initial={{
+                initial={disableInitialAnimation ? false : {
                   opacity: 0,
                   y: 20,
                 }}
-                animate={{
+                animate={disableInitialAnimation ? undefined : {
                   opacity: 1,
                   y: 0,
                   transition: {
