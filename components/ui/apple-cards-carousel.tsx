@@ -358,9 +358,12 @@ export const Card = ({
                           key={src}
                           type="button"
                           onClick={() => setGalleryIndex(i)}
-                          className={`relative aspect-square overflow-hidden rounded-xl border transition ${
-                            i === galleryIndex ? 'border-white/80 ring-2 ring-white' : 'border-white/10'
-                          }`}
+                          className={cn(
+                            'relative aspect-square overflow-hidden rounded-xl transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70',
+                            i === galleryIndex
+                              ? 'border border-white/80 shadow-lg'
+                              : 'border border-white/15 hover:border-white/50 hover:shadow-md'
+                          )}
                           aria-label={`View image ${i + 1}`}
                         >
                           <Image
