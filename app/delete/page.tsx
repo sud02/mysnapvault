@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import type { Snap } from '@/lib/snaps';
 
 type SnapWithSelection = Snap & { deleting?: boolean };
@@ -22,12 +22,30 @@ export default function DeletePage() {
   const [snaps, setSnaps] = useState<SnapWithSelection[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     startTransition(() => {
       fetchSnaps().then((data) => setSnaps(data));
     });
   }, []);
+
+  const hasSnaps = snaps.length > 0;
+
+  const sortedSnaps = useMemo(() => {
+    return [...snaps].sort((a, b) => {
+      const aTime = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+      const bTime = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+      return bTime - aTime;
+    });
+  }, [snaps]);
+
+  async function refreshSnaps() {
+    setRefreshing(true);
+    const data = await fetchSnaps();
+    setSnaps(data);
+    setRefreshing(false);
+  }
 
   async function handleDelete(path: string) {
     if (!secret) {
@@ -51,7 +69,7 @@ export default function DeletePage() {
         setSnaps((prev) => prev.map((s) => (s.name === path ? { ...s, deleting: false } : s)));
       } else {
         setStatus('Deleted');
-        setSnaps((prev) => prev.filter((s) => s.name !== path));
+        await refreshSnaps();
       }
     } catch {
       setStatus('Network error');
@@ -76,15 +94,30 @@ export default function DeletePage() {
         />
       </div>
       {status && <div className="text-sm text-gray-700">{status}</div>}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500">
+          {hasSnaps ? `${sortedSnaps.length} snap${sortedSnaps.length === 1 ? '' : 's'} found` : 'No snaps loaded yet'}
+        </p>
+        <button
+          type="button"
+          onClick={refreshSnaps}
+          className="rounded-md border px-3 py-1 text-sm"
+          disabled={refreshing || isPending}
+        >
+          {refreshing ? 'Refreshing…' : 'Refresh list'}
+        </button>
+      </div>
       <div className="space-y-3">
-        {snaps.length === 0 && !isPending ? (
+        {sortedSnaps.length === 0 && !isPending ? (
           <div className="text-sm text-gray-500">No snaps found.</div>
         ) : (
-          snaps.map((snap) => {
-            const displayDate = snap.updated_at ? (() => {
-              const parsed = new Date(snap.updated_at);
-              return Number.isNaN(parsed.getTime()) ? 'Unknown' : parsed.toLocaleString();
-            })() : 'Unknown';
+          sortedSnaps.map((snap) => {
+            const displayDate = snap.updated_at
+              ? (() => {
+                  const parsed = new Date(snap.updated_at);
+                  return Number.isNaN(parsed.getTime()) ? 'Unknown' : parsed.toLocaleString();
+                })()
+              : 'Unknown';
 
             return (
               <div
@@ -109,7 +142,7 @@ export default function DeletePage() {
                 <button
                   type="button"
                   onClick={() => handleDelete(snap.name)}
-                  disabled={snap.deleting}
+                  disabled={snap.deleting || refreshing}
                   className="rounded-md bg-red-600 px-3 py-1 text-sm text-white disabled:opacity-50"
                 >
                   {snap.deleting ? 'Deleting…' : 'Delete'}
