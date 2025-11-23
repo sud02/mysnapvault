@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Carousel, Card } from '@/components/ui/apple-cards-carousel';
 
-export type DayItem = { date: string; day: number; has: boolean; preview?: string };
+export type DayItem = { date: string; day: number; has: boolean; preview?: string; gallery: string[] };
 
 export default function MonthAppleCarousel({
   days,
@@ -22,6 +22,7 @@ export default function MonthAppleCarousel({
           layout
           card={{
             src: d.preview,
+            gallery: d.gallery,
             title: String(d.day).padStart(2, '0'),
             category: d.date,
             content: <div className="py-6 text-sm text-gray-600">No snaps for this day</div>,

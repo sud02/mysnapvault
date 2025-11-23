@@ -31,7 +31,7 @@ export default async function DayPage({ params }: { params: { date: string } }) 
     }
   }
   for (let i = 1; i <= daysInMonth; i++) {
-    byDay[i].sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
+    byDay[i].sort((a, b) => (a.updated_at || '').localeCompare(b.updated_at || ''));
   }
   const days: DayItem[] = Array.from({ length: daysInMonth }, (_, i) => {
     const dd = i + 1;
@@ -41,12 +41,18 @@ export default async function DayPage({ params }: { params: { date: string } }) 
       day: dd,
       has: snaps.length > 0,
       preview: snaps[0]?.url,
+      gallery: snaps.map((snap) => snap.url),
     };
   });
 
+  const currentDayEntry = days[day - 1];
+  if (!currentDayEntry?.has) {
+    return notFound();
+  }
+
   return (
     <div className="space-y-8">
-      <div>
+      <div className="flex items-center justify-between">
         <a href="/" className="button" aria-label="Go back">
           <span className="button-box">
             <svg className="button-elem" viewBox="0 0 46 40" aria-hidden="true">
@@ -54,8 +60,11 @@ export default async function DayPage({ params }: { params: { date: string } }) 
             </svg>
           </span>
         </a>
+        <div className="text-right">
+          <p className="text-sm text-gray-500">{date}</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wide">{currentDayEntry.gallery.length} photo{currentDayEntry.gallery.length > 1 ? 's' : ''}</p>
+        </div>
       </div>
-      {/* Month Apple carousel over full month; centers current day and updates URL/date smoothly */}
       <MonthAppleCarousel days={days} initialIndex={day - 1} />
     </div>
   );

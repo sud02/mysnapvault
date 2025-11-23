@@ -2,6 +2,7 @@
 import Image from "next/image";
 import React, {
   useEffect,
+  useMemo,
   useRef,
   useState,
   createContext,
@@ -27,6 +28,7 @@ interface CarouselProps {
 
 type CardData = {
   src?: string;
+  gallery?: string[];
   title: string;
   category: string;
   content: React.ReactNode;
@@ -261,8 +263,16 @@ export const Card = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const { onCardClose, currentIndex } = useContext(CarouselContext);
+
+  const gallery = useMemo(() => {
+    if (card.gallery && card.gallery.length > 0) return card.gallery;
+    return card.src ? [card.src] : [];
+  }, [card.gallery, card.src]);
+
+  const previewSrc = card.src ?? gallery[0];
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -288,15 +298,17 @@ export const Card = ({
       window.location.href = href;
       return;
     }
-    if (!card.src) {
+    if (!gallery.length) {
       return; // placeholder card, do nothing
     }
+    setGalleryIndex(0);
     setOpen(true);
   };
 
   const handleClose = () => {
     setOpen(false);
     onCardClose(index);
+    setGalleryIndex(0);
   };
 
   return (
@@ -316,7 +328,7 @@ export const Card = ({
               exit={{ opacity: 0 }}
               ref={containerRef}
               layoutId={layout ? `card-${card.title}` : undefined}
-              className="relative z-[60] mx-auto my-10 flex items-center justify-center"
+              className="relative z-[60] mx-auto my-10 flex flex-col items-center justify-center gap-6 px-4"
             >
               <button
                 className="sticky top-4 right-0 ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-black"
@@ -325,16 +337,44 @@ export const Card = ({
               >
                 <IconX className="h-6 w-6 text-white" />
               </button>
-              {card.src ? (
-                <Image
-                  src={card.src}
-                  alt={card.title}
-                  width={1600}
-                  height={900}
-                  className="max-h-[85vh] max-w-[90vw] object-contain rounded-2xl"
-                  sizes="90vw"
-                  priority
-                />
+              {gallery.length ? (
+                <div className="flex flex-col gap-4">
+                  <div className="relative mx-auto max-h-[70vh] max-w-[85vw] overflow-hidden rounded-3xl bg-black/20">
+                    <Image
+                      key={`${card.title}-${galleryIndex}`}
+                      src={gallery[galleryIndex]}
+                      alt={`${card.title} ${galleryIndex + 1}`}
+                      width={1600}
+                      height={900}
+                      className="max-h-[70vh] w-full object-contain"
+                      sizes="85vw"
+                      priority
+                    />
+                  </div>
+                  {gallery.length > 1 && (
+                    <div className="grid max-h-[18vh] grid-cols-3 gap-3 overflow-y-auto sm:grid-cols-4 md:grid-cols-5">
+                      {gallery.map((src, i) => (
+                        <button
+                          key={src}
+                          type="button"
+                          onClick={() => setGalleryIndex(i)}
+                          className={`relative aspect-square overflow-hidden rounded-xl border transition ${
+                            i === galleryIndex ? 'border-white/80 ring-2 ring-white' : 'border-white/10'
+                          }`}
+                          aria-label={`View image ${i + 1}`}
+                        >
+                          <Image
+                            src={src}
+                            alt={`${card.title} thumbnail ${i + 1}`}
+                            fill
+                            className="h-full w-full object-cover"
+                            sizes="120px"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ) : null}
             </motion.div>
           </div>
@@ -351,10 +391,10 @@ export const Card = ({
       >
         <div className="hidden" />
         <div className="hidden" />
-        {card.src ? (
+        {previewSrc ? (
           <div className="absolute inset-0 z-10 h-full w-full">
             <Image
-              src={card.src}
+              src={previewSrc}
               alt={card.title}
               fill
               className="absolute inset-0 h-full w-full object-cover"
