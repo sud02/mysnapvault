@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import Image from 'next/image';
 import { listSnaps, type Snap } from '@/lib/snaps';
+import { VisitCounter } from '@/components/VisitCounter';
 // Reverted: using monthly day grid view
 
 type PageProps = {
@@ -59,6 +60,7 @@ export default async function Page({ searchParams }: PageProps) {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold text-center">Snap Of The Day</h1>
+      <VisitCounter />
       <div className="space-y-10">
         {monthsToRender.map((monthIdx) => {
           const daysThisMonth = daysInMonth(selectedYear, monthIdx);
