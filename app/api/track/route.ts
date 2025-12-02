@@ -46,12 +46,19 @@ export async function GET(request: NextRequest) {
   const ip = getClientIp(request);
   const userAgent = request.headers.get('user-agent') ?? '';
 
-  visits.push({
+  const existingIndex = visits.findIndex((v) => v.ip === ip);
+  const newVisit: Visit = {
     ip,
     path,
     userAgent,
     timestamp: new Date().toISOString(),
-  });
+  };
+
+  if (existingIndex >= 0) {
+    visits[existingIndex] = newVisit;
+  } else {
+    visits.push(newVisit);
+  }
 
   return NextResponse.json({
     total: visits.length,
