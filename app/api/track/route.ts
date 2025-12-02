@@ -6,6 +6,8 @@ type Visit = {
   path: string;
   userAgent: string;
   timestamp: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 const visits: Visit[] = [];
@@ -41,8 +43,14 @@ async function sendAlertEmail(visit: Visit) {
     `IP: ${visit.ip}`,
     `Path: ${visit.path}`,
     `Time: ${visit.timestamp}`,
+    visit.latitude != null && visit.longitude != null
+      ? `Location (lat, lon): ${visit.latitude}, ${visit.longitude}`
+      : undefined,
+    visit.latitude != null && visit.longitude != null
+      ? `Map: https://www.google.com/maps?q=${visit.latitude},${visit.longitude}`
+      : undefined,
     `User-Agent: ${visit.userAgent}`,
-  ];
+  ].filter((l): l is string => Boolean(l));
 
   const html = `
     <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.5; font-size: 14px; color: #111827;">
@@ -62,6 +70,21 @@ async function sendAlertEmail(visit: Visit) {
             <td style="padding: 4px 8px; font-weight: 600;">Time</td>
             <td style="padding: 4px 8px;">${visit.timestamp}</td>
           </tr>
+          ${
+            visit.latitude != null && visit.longitude != null
+              ? `<tr>
+                  <td style="padding: 4px 8px; font-weight: 600;">Location</td>
+                  <td style="padding: 4px 8px;">
+                    <div>
+                      <div>${visit.latitude}, ${visit.longitude}</div>
+                      <div>
+                        <a href="https://www.google.com/maps?q=${visit.latitude},${visit.longitude}" target="_blank" rel="noreferrer" style="color: #2563eb; text-decoration: underline;">View on map</a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>`
+              : ''
+          }
           <tr>
             <td style="padding: 4px 8px; font-weight: 600;">User-Agent</td>
             <td style="padding: 4px 8px;">${visit.userAgent}</td>
@@ -105,6 +128,8 @@ export async function GET(request: NextRequest) {
   const password = searchParams.get('password') ?? '';
 
   const path = searchParams.get('path') ?? '/';
+  const latStr = searchParams.get('lat');
+  const lonStr = searchParams.get('lon');
 
   if (isAdmin) {
     const expected = process.env.ADMIN_PASSWORD ?? '';
@@ -121,12 +146,17 @@ export async function GET(request: NextRequest) {
   const ip = getClientIp(request);
   const userAgent = request.headers.get('user-agent') ?? '';
 
+  const latitude = latStr != null ? Number(latStr) : undefined;
+  const longitude = lonStr != null ? Number(lonStr) : undefined;
+
   const existingIndex = visits.findIndex((v) => v.ip === ip);
   const newVisit: Visit = {
     ip,
     path,
     userAgent,
     timestamp: new Date().toISOString(),
+    ...(typeof latitude === 'number' && Number.isFinite(latitude) ? { latitude } : {}),
+    ...(typeof longitude === 'number' && Number.isFinite(longitude) ? { longitude } : {}),
   };
 
   if (existingIndex >= 0) {

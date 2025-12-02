@@ -7,6 +7,8 @@ type Visit = {
   path: string;
   userAgent: string;
   timestamp: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 export default function AnalyticsPage() {
@@ -68,6 +70,7 @@ export default function AnalyticsPage() {
                 <th className="border-b px-2 py-1">Time</th>
                 <th className="border-b px-2 py-1">IP</th>
                 <th className="border-b px-2 py-1">Path</th>
+                <th className="border-b px-2 py-1">Location</th>
                 <th className="border-b px-2 py-1">User Agent</th>
               </tr>
             </thead>
@@ -82,6 +85,23 @@ export default function AnalyticsPage() {
                     </td>
                     <td className="border-b px-2 py-1 whitespace-nowrap">{v.ip}</td>
                     <td className="border-b px-2 py-1 whitespace-nowrap">{v.path}</td>
+                    <td className="border-b px-2 py-1 whitespace-nowrap">
+                      {v.latitude != null && v.longitude != null ? (
+                        <div className="flex flex-col gap-0.5">
+                          <span>{`${v.latitude.toFixed(4)}, ${v.longitude.toFixed(4)}`}</span>
+                          <a
+                            href={`https://www.google.com/maps?q=${v.latitude},${v.longitude}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            View on map
+                          </a>
+                        </div>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
                     <td className="border-b px-2 py-1">{v.userAgent}</td>
                   </tr>
                 ))}

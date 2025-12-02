@@ -6,21 +6,40 @@ export function VisitTracker() {
   useEffect(() => {
     let cancelled = false;
 
-    async function track() {
+    async function sendTrack(path: string, lat?: number, lon?: number) {
       try {
-        const path = window.location.pathname || '/';
-        const res = await fetch(`/api/track?path=${encodeURIComponent(path)}`);
+        const params = new URLSearchParams({ path });
+        if (typeof lat === 'number' && typeof lon === 'number') {
+          params.set('lat', String(lat));
+          params.set('lon', String(lon));
+        }
+        const res = await fetch(`/api/track?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to track');
         await res.json();
       } catch {
-        // ignore errors on tracking
         if (!cancelled) {
-          // no-op
+          // ignore tracking errors
         }
       }
     }
 
-    track();
+    const path = window.location.pathname || '/';
+
+    if (!('geolocation' in navigator)) {
+      void sendTrack(path);
+    } else {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (cancelled) return;
+          void sendTrack(path, pos.coords.latitude, pos.coords.longitude);
+        },
+        () => {
+          if (cancelled) return;
+          void sendTrack(path);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
 
     return () => {
       cancelled = true;
