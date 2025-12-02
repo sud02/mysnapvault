@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import nodemailer from 'nodemailer';
 
 type Visit = {
   ip: string;
@@ -8,6 +9,80 @@ type Visit = {
 };
 
 const visits: Visit[] = [];
+
+async function sendAlertEmail(visit: Visit) {
+  const host = process.env.SMTP_HOST;
+  const portStr = process.env.SMTP_PORT;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const to = process.env.ALERT_EMAIL_TO;
+
+  if (!host || !portStr || !user || !pass || !to) {
+    // Missing configuration; skip sending
+    return;
+  }
+
+  const port = Number(portStr) || 587;
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: {
+      user,
+      pass,
+    },
+  });
+
+  const subject = `New visitor on My Snap Vault`;
+  const textLines = [
+    `A new unique visitor has been detected on My Snap Vault.`,
+    '',
+    `IP: ${visit.ip}`,
+    `Path: ${visit.path}`,
+    `Time: ${visit.timestamp}`,
+    `User-Agent: ${visit.userAgent}`,
+  ];
+
+  const html = `
+    <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.5; font-size: 14px; color: #111827;">
+      <h2 style="margin: 0 0 8px; font-size: 16px;">New visitor on <span style="font-weight: 600;">My Snap Vault</span></h2>
+      <p style="margin: 0 0 12px;">A new unique visitor has been detected.</p>
+      <table style="border-collapse: collapse; width: 100%; max-width: 600px;">
+        <tbody>
+          <tr>
+            <td style="padding: 4px 8px; font-weight: 600; width: 80px;">IP</td>
+            <td style="padding: 4px 8px;">${visit.ip}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 8px; font-weight: 600;">Path</td>
+            <td style="padding: 4px 8px;">${visit.path}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 8px; font-weight: 600;">Time</td>
+            <td style="padding: 4px 8px;">${visit.timestamp}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 8px; font-weight: 600;">User-Agent</td>
+            <td style="padding: 4px 8px;">${visit.userAgent}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: user,
+      to,
+      subject,
+      text: textLines.join('\n'),
+      html,
+    });
+  } catch {
+    // Ignore email errors; tracking should still work
+  }
+}
 
 function getClientIp(request: NextRequest): string {
   const xff = request.headers.get('x-forwarded-for');
@@ -58,6 +133,7 @@ export async function GET(request: NextRequest) {
     visits[existingIndex] = newVisit;
   } else {
     visits.push(newVisit);
+    await sendAlertEmail(newVisit);
   }
 
   return NextResponse.json({
