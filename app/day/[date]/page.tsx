@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { listSnaps, type Snap } from '@/lib/snaps';
 import { notFound } from 'next/navigation';
 import MonthAppleCarousel, { type DayItem } from '@/components/MonthAppleCarousel';

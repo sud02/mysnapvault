@@ -5,6 +5,8 @@ export type Snap = { name: string; url: string; updated_at?: string | null };
 export async function listSnaps(): Promise<Snap[]> {
   try {
     const supabase = getSupabaseAdmin();
+    console.log(`📦 Listing files from bucket: "${BUCKET}"`);
+    
     const { data: files, error } = await supabase.storage
       .from(BUCKET)
       .list('', {
@@ -12,11 +14,16 @@ export async function listSnaps(): Promise<Snap[]> {
       });
 
     if (error) {
-      console.error('Error listing snaps:', error);
+      console.error('❌ Error listing snaps:', error);
       return [];
     }
 
-    if (!files || files.length === 0) return [];
+    if (!files || files.length === 0) {
+      console.log('⚠️  No files found in bucket');
+      return [];
+    }
+
+    console.log(`✅ Found ${files.length} file(s) in bucket`);
 
     // Get public URLs for each file
     const snaps = files
@@ -31,6 +38,7 @@ export async function listSnaps(): Promise<Snap[]> {
           const timestamp = parseInt(timestampMatch[1], 10);
           if (!isNaN(timestamp)) {
             fileDate = new Date(timestamp).toISOString();
+            console.log(`📅 ${file.name} → ${new Date(timestamp).toLocaleDateString()}`);
           }
         }
         
@@ -46,7 +54,7 @@ export async function listSnaps(): Promise<Snap[]> {
 
     return snaps;
   } catch (error) {
-    console.error('Error in listSnaps:', error);
+    console.error('❌ Error in listSnaps:', error);
     return [];
   }
 }

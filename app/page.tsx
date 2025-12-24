@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic';
+export const revalidate = 0; // Disable caching completely
 
 import Image from 'next/image';
 import { listSnaps, type Snap } from '@/lib/snaps';
