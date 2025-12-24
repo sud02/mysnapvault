@@ -1,18 +1,38 @@
-import { list } from '@vercel/blob';
+import { getSupabaseAdmin, BUCKET } from './supabaseServer';
 
 export type Snap = { name: string; url: string; updated_at?: string | null };
 
 export async function listSnaps(): Promise<Snap[]> {
   try {
-    const { blobs } = await list();
-    const files = blobs ?? [];
-    files.sort((a, b) => {
-      const aTime = a.uploadedAt ? a.uploadedAt.getTime() : 0;
-      const bTime = b.uploadedAt ? b.uploadedAt.getTime() : 0;
-      return bTime - aTime;
-    });
-    return files.map((blob) => ({ name: blob.pathname, url: blob.url, updated_at: blob.uploadedAt?.toISOString() ?? null }));
-  } catch {
+    const supabase = getSupabaseAdmin();
+    const { data: files, error } = await supabase.storage
+      .from(BUCKET)
+      .list('', {
+        sortBy: { column: 'created_at', order: 'desc' },
+      });
+
+    if (error) {
+      console.error('Error listing snaps:', error);
+      return [];
+    }
+
+    if (!files || files.length === 0) return [];
+
+    // Get public URLs for each file
+    const snaps = files
+      .filter((file) => file.name && file.name !== '.emptyFolderPlaceholder')
+      .map((file) => {
+        const { data } = supabase.storage.from(BUCKET).getPublicUrl(file.name);
+        return {
+          name: file.name,
+          url: data.publicUrl,
+          updated_at: file.created_at || null,
+        };
+      });
+
+    return snaps;
+  } catch (error) {
+    console.error('Error in listSnaps:', error);
     return [];
   }
 }

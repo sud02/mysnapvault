@@ -5,7 +5,8 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'assets.aceternity.com' },
-      { protocol: 'https', hostname: '*.public.blob.vercel-storage.com' },
+      // Supabase Storage - allow all supabase.co subdomains
+      { protocol: 'https', hostname: '*.supabase.co' },
     ],
   },
 };
