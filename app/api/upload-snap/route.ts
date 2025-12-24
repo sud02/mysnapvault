@@ -11,15 +11,28 @@ export async function POST(request: Request) {
   }
   const form = await request.formData();
   const file = form.get('file') as File | null;
+  const selectedDate = form.get('date') as string | null; // Get the selected date
+  
   if (!file) {
     return NextResponse.json({ error: 'Missing file' }, { status: 400 });
   }
   if (file.size > 10 * 1024 * 1024) {
     return NextResponse.json({ error: 'File too large (max 10 MB)' }, { status: 413 });
   }
+  
   const ext = file.name.includes('.') ? file.name.split('.').pop() : '';
   const safeExt = (ext || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const ts = Date.now();
+  
+  // Use selected date or current date
+  let uploadDate: Date;
+  if (selectedDate) {
+    // Parse the date string (YYYY-MM-DD) and set time to noon to avoid timezone issues
+    uploadDate = new Date(selectedDate + 'T12:00:00Z');
+  } else {
+    uploadDate = new Date();
+  }
+  
+  const ts = uploadDate.getTime();
   const rand = Math.random().toString(36).slice(2, 8);
   const fileName = `${ts}-${rand}${safeExt ? '.' + safeExt : ''}`;
   
@@ -48,7 +61,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ 
       path: fileName, 
       url: urlData.publicUrl, 
-      uploadedAt: new Date().toISOString() 
+      uploadedAt: uploadDate.toISOString() 
     }, { status: 200 });
   } catch (e: any) {
     console.error('Upload error:', e);

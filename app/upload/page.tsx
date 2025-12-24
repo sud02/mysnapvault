@@ -4,6 +4,11 @@ import { useState, useRef } from 'react';
 
 export default function UploadPage() {
   const [secret, setSecret] = useState('');
+  const [selectedDate, setSelectedDate] = useState(() => {
+    // Default to today's date
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
   const [status, setStatus] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -15,14 +20,15 @@ export default function UploadPage() {
       setStatus('Select a file');
       return;
     }
-    if (file.size > 50 * 1024 * 1024) {
-      setStatus('File too large (max 50 MB)');
+    if (file.size > 10 * 1024 * 1024) {
+      setStatus('File too large (max 10 MB)');
       return;
     }
     setUploading(true);
     setStatus(null);
     const fd = new FormData();
     fd.append('file', file);
+    fd.append('date', selectedDate); // Add selected date to form data
     try {
       const res = await fetch('/api/upload-snap', {
         method: 'POST',
@@ -47,6 +53,17 @@ export default function UploadPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Upload</h1>
       <form onSubmit={onSubmit} className="space-y-4 max-w-md">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">Date</label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            max={new Date().toISOString().split('T')[0]}
+            className="w-full rounded-md border px-3 py-2"
+            required
+          />
+        </div>
         <div className="space-y-2">
           <label className="block text-sm font-medium">Upload Secret</label>
           <input
