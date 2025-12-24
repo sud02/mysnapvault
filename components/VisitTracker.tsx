@@ -25,21 +25,24 @@ export function VisitTracker() {
 
     const path = window.location.pathname || '/';
 
-    if (!('geolocation' in navigator)) {
-      void sendTrack(path);
-    } else {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          if (cancelled) return;
-          void sendTrack(path, pos.coords.latitude, pos.coords.longitude);
-        },
-        () => {
-          if (cancelled) return;
-          void sendTrack(path);
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    }
+    // Location tracking commented out - only tracking page visits without geolocation
+    void sendTrack(path);
+    
+    // if (!('geolocation' in navigator)) {
+    //   void sendTrack(path);
+    // } else {
+    //   navigator.geolocation.getCurrentPosition(
+    //     (pos) => {
+    //       if (cancelled) return;
+    //       void sendTrack(path, pos.coords.latitude, pos.coords.longitude);
+    //     },
+    //     () => {
+    //       if (cancelled) return;
+    //       void sendTrack(path);
+    //     },
+    //     { enableHighAccuracy: true, timeout: 10000 }
+    //   );
+    // }
 
     return () => {
       cancelled = true;
