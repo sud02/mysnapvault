@@ -26,15 +26,20 @@ export async function POST(request: Request) {
   // Use selected date or current date
   let uploadDate: Date;
   if (selectedDate) {
-    // Parse the date string (YYYY-MM-DD) and set time to noon to avoid timezone issues
-    uploadDate = new Date(selectedDate + 'T12:00:00Z');
+    // Parse the date string (YYYY-MM-DD) and set to start of day in local timezone
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    uploadDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+    console.log(`📅 Selected date: ${selectedDate} → Timestamp: ${uploadDate.getTime()} (${uploadDate.toISOString()})`);
   } else {
     uploadDate = new Date();
+    console.log(`📅 Using current date: ${uploadDate.toISOString()}`);
   }
   
   const ts = uploadDate.getTime();
   const rand = Math.random().toString(36).slice(2, 8);
   const fileName = `${ts}-${rand}${safeExt ? '.' + safeExt : ''}`;
+  
+  console.log(`📦 Generated filename: ${fileName}`);
   
   try {
     const supabase = getSupabaseAdmin();
