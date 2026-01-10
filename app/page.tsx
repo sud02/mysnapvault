@@ -45,11 +45,51 @@ export default async function Page({ searchParams }: PageProps) {
   const monthName = (month: number) =>
     new Intl.DateTimeFormat('en-US', { month: 'long' }).format(new Date(selectedYear, month, 1));
 
-  const MIN_YEAR = 2025;
-  const MIN_MONTH_INDEX = 10; // November
+  // Find which months have photos
+  const monthsWithPhotos = new Set<number>();
+  for (const s of snaps) {
+    if (!s.updated_at) continue;
+    const d = new Date(s.updated_at);
+    if (d.getFullYear() === selectedYear) {
+      monthsWithPhotos.add(d.getMonth());
+    }
+  }
 
-  const lastMonthIndex = selectedYear < currentYear ? 11 : selectedYear === currentYear ? currentMonth : -1;
-  const firstMonthIndex = selectedYear < MIN_YEAR ? 12 : selectedYear === MIN_YEAR ? MIN_MONTH_INDEX : 0;
+  // Determine month range to display
+  const MIN_YEAR = 2024;
+  const MIN_MONTH_INDEX = 8; // September 2024
+
+  // Start with default range based on year
+  let lastMonthIndex: number;
+  let firstMonthIndex: number;
+
+  if (selectedYear < currentYear) {
+    // Past year: show all months, but start from September if it's 2024
+    lastMonthIndex = 11;
+    firstMonthIndex = selectedYear === MIN_YEAR ? MIN_MONTH_INDEX : 0;
+  } else if (selectedYear === currentYear) {
+    // Current year: show from September 2024 (if viewing 2024) or January (if viewing 2025+) to current month
+    lastMonthIndex = currentMonth;
+    firstMonthIndex = selectedYear === MIN_YEAR ? MIN_MONTH_INDEX : 0;
+  } else {
+    // Future year: show all months
+    lastMonthIndex = 11;
+    firstMonthIndex = 0;
+  }
+
+  // CRITICAL: Always include ALL months that have photos, even if outside the normal range
+  // This ensures if you have a photo in November 2025, it shows even if we're in December 2025
+  if (monthsWithPhotos.size > 0) {
+    const minPhotoMonth = Math.min(...Array.from(monthsWithPhotos));
+    const maxPhotoMonth = Math.max(...Array.from(monthsWithPhotos));
+    
+    // Expand range to include all months with photos
+    firstMonthIndex = Math.min(firstMonthIndex, minPhotoMonth);
+    
+    // Show up to the latest month with photos (even if it's before current month)
+    // This fixes the issue where November 2025 disappears when viewing December 2025
+    lastMonthIndex = Math.max(lastMonthIndex, maxPhotoMonth);
+  }
 
   const monthsToRender: number[] = [];
   if (lastMonthIndex >= firstMonthIndex && lastMonthIndex >= 0 && firstMonthIndex <= 11) {
