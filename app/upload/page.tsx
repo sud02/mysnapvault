@@ -3,12 +3,21 @@
 import { useState, useRef } from 'react';
 
 export default function UploadPage() {
+  // Helper to get today's date in local timezone (YYYY-MM-DD)
+  const getTodayLocal = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [secret, setSecret] = useState('');
   const [selectedDate, setSelectedDate] = useState(() => {
     // Default to today's date
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    return getTodayLocal();
   });
+  const [maxDate] = useState(() => getTodayLocal()); // Set max date once on mount
   const [status, setStatus] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -59,10 +68,12 @@ export default function UploadPage() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            max={new Date().toISOString().split('T')[0]}
+            max={maxDate}
+            min="2020-01-01"
             className="w-full rounded-md border px-3 py-2"
             required
           />
+          <p className="text-xs text-gray-500">You can select today or any date in the past</p>
         </div>
         <div className="space-y-2">
           <label className="block text-sm font-medium">Upload Secret</label>
