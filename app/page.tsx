@@ -4,6 +4,7 @@ export const revalidate = 0; // Disable caching completely
 import Image from 'next/image';
 import { listSnaps, type Snap } from '@/lib/snaps';
 import { VisitTracker } from '@/components/VisitTracker';
+import YearSelector from '@/components/YearSelector';
 // Reverted: using monthly day grid view
 
 type PageProps = {
@@ -69,10 +70,16 @@ export default async function Page({ searchParams }: PageProps) {
     firstMonthIndex = selectedYear === MIN_YEAR ? MIN_MONTH_INDEX : 0;
   } else if (selectedYear === currentYear) {
     // Current year: show from September 2024 (if viewing 2024) or January (if viewing 2025+) to current month
+    // Always show all months up to current month, even if no photos
     lastMonthIndex = currentMonth;
     firstMonthIndex = selectedYear === MIN_YEAR ? MIN_MONTH_INDEX : 0;
+    
+    // If we're in 2025 or later, always show from January (month 0)
+    if (selectedYear >= 2025) {
+      firstMonthIndex = 0;
+    }
   } else {
-    // Future year: show all months
+    // Future year: show all months (0-11)
     lastMonthIndex = 11;
     firstMonthIndex = 0;
   }
@@ -91,6 +98,11 @@ export default async function Page({ searchParams }: PageProps) {
     lastMonthIndex = Math.max(lastMonthIndex, maxPhotoMonth);
   }
 
+  // DEBUG: Log what we're showing
+  console.log(`📅 Year: ${selectedYear}, Current: ${currentYear}, Current Month: ${currentMonth}`);
+  console.log(`📅 Months with photos: ${Array.from(monthsWithPhotos).join(', ')}`);
+  console.log(`📅 Range: ${firstMonthIndex} to ${lastMonthIndex}`);
+
   const monthsToRender: number[] = [];
   if (lastMonthIndex >= firstMonthIndex && lastMonthIndex >= 0 && firstMonthIndex <= 11) {
     for (let m = lastMonthIndex; m >= firstMonthIndex; m--) {
@@ -98,9 +110,24 @@ export default async function Page({ searchParams }: PageProps) {
     }
   }
 
+  // Get all years that have photos
+  const yearsWithPhotos = new Set<number>();
+  for (const s of snaps) {
+    if (!s.updated_at) continue;
+    const d = new Date(s.updated_at);
+    yearsWithPhotos.add(d.getFullYear());
+  }
+  const allAvailableYears = Array.from(yearsWithPhotos).sort((a, b) => b - a);
+  if (allAvailableYears.length === 0) {
+    allAvailableYears.push(currentYear);
+  }
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-center">Snap Of The Day</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-center flex-1">Snap Of The Day</h1>
+        <YearSelector currentYear={selectedYear} availableYears={allAvailableYears} />
+      </div>
       <VisitTracker />
       <div className="space-y-10">
         {monthsToRender.map((monthIdx) => {
