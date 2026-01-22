@@ -34,7 +34,8 @@ export default async function Page({ searchParams }: PageProps) {
   for (const s of snaps) {
     if (!s.updated_at) continue;
     const d = new Date(s.updated_at);
-    if (d.getFullYear() === selectedYear) {
+    const snapYear = d.getFullYear();
+    if (snapYear === selectedYear) {
       const monthIdx = d.getMonth();
       const dayNum = d.getDate();
       if (byMonthDay[monthIdx]?.[dayNum]) {
@@ -42,6 +43,20 @@ export default async function Page({ searchParams }: PageProps) {
       }
     }
   }
+  
+  // DEBUG: Log snaps by year
+  const snapsByYear: Record<number, number> = {};
+  for (const s of snaps) {
+    if (!s.updated_at) continue;
+    const d = new Date(s.updated_at);
+    const year = d.getFullYear();
+    snapsByYear[year] = (snapsByYear[year] || 0) + 1;
+  }
+  console.log(`📊 Snaps by year:`, snapsByYear);
+  console.log(`📊 Viewing year: ${selectedYear}, Found ${snaps.filter(s => {
+    if (!s.updated_at) return false;
+    return new Date(s.updated_at).getFullYear() === selectedYear;
+  }).length} snaps for this year`);
 
   const monthName = (month: number) =>
     new Intl.DateTimeFormat('en-US', { month: 'long' }).format(new Date(selectedYear, month, 1));
@@ -64,20 +79,18 @@ export default async function Page({ searchParams }: PageProps) {
   let lastMonthIndex: number;
   let firstMonthIndex: number;
 
-  if (selectedYear < currentYear) {
+  // For 2025 and beyond, ALWAYS show all 12 months
+  if (selectedYear >= 2025) {
+    firstMonthIndex = 0;
+    lastMonthIndex = 11;
+  } else if (selectedYear < currentYear) {
     // Past year: show all months, but start from September if it's 2024
     lastMonthIndex = 11;
     firstMonthIndex = selectedYear === MIN_YEAR ? MIN_MONTH_INDEX : 0;
   } else if (selectedYear === currentYear) {
-    // Current year: show from September 2024 (if viewing 2024) or January (if viewing 2025+) to current month
-    // Always show all months up to current month, even if no photos
+    // Current year (2024): show from September to current month
     lastMonthIndex = currentMonth;
     firstMonthIndex = selectedYear === MIN_YEAR ? MIN_MONTH_INDEX : 0;
-    
-    // If we're in 2025 or later, always show from January (month 0)
-    if (selectedYear >= 2025) {
-      firstMonthIndex = 0;
-    }
   } else {
     // Future year: show all months (0-11)
     lastMonthIndex = 11;
@@ -92,9 +105,6 @@ export default async function Page({ searchParams }: PageProps) {
     
     // Expand range to include all months with photos
     firstMonthIndex = Math.min(firstMonthIndex, minPhotoMonth);
-    
-    // Show up to the latest month with photos (even if it's before current month)
-    // This fixes the issue where November 2025 disappears when viewing December 2025
     lastMonthIndex = Math.max(lastMonthIndex, maxPhotoMonth);
   }
 

@@ -37,8 +37,12 @@ export async function listSnaps(): Promise<Snap[]> {
         if (timestampMatch) {
           const timestamp = parseInt(timestampMatch[1], 10);
           if (!isNaN(timestamp)) {
-            fileDate = new Date(timestamp).toISOString();
-            console.log(`📅 ${file.name} → ${new Date(timestamp).toLocaleDateString()}`);
+            const date = new Date(timestamp);
+            fileDate = date.toISOString();
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            const day = date.getDate();
+            console.log(`📅 ${file.name} → ${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')} (${date.toLocaleDateString()})`);
           }
         }
         
