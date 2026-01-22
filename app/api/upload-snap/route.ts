@@ -6,8 +6,16 @@ export const runtime = 'nodejs';
 export async function POST(request: Request) {
   const secretHeader = request.headers.get('x-upload-secret') || '';
   const expected = process.env.UPLOAD_SECRET || '';
-  if (!expected || secretHeader !== expected) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  
+  // Debug logging (remove in production if needed)
+  if (!expected) {
+    console.error('❌ UPLOAD_SECRET is not set in environment variables');
+    return NextResponse.json({ error: 'Server configuration error: UPLOAD_SECRET not set' }, { status: 500 });
+  }
+  
+  if (secretHeader !== expected) {
+    console.error(`❌ Upload secret mismatch. Received: "${secretHeader}", Expected: "${expected}"`);
+    return NextResponse.json({ error: 'Unauthorized: Invalid upload secret' }, { status: 401 });
   }
   const form = await request.formData();
   const file = form.get('file') as File | null;
