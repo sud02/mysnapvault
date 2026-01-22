@@ -7,9 +7,12 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const checks: Record<string, any> = {
     bucketName: BUCKET,
-    supabaseUrl: process.env.SUPABASE_URL ? '✅ Set' : '❌ NOT SET',
-    supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY ? '✅ Set' : '❌ NOT SET',
-    bucketEnv: process.env.SNAPS_BUCKET || 'Using default: snaps',
+    supabaseUrl: process.env.SUPABASE_URL ? `✅ Set (${process.env.SUPABASE_URL.substring(0, 30)}...)` : '❌ NOT SET',
+    supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY ? `✅ Set (${process.env.SUPABASE_SERVICE_ROLE_KEY.substring(0, 20)}...)` : '❌ NOT SET',
+    bucketEnv: process.env.SNAPS_BUCKET || '⚠️ Using default: snaps (SNAPS_BUCKET not set!)',
+    uploadSecret: process.env.UPLOAD_SECRET ? '✅ Set' : '❌ NOT SET',
+    nodeEnv: process.env.NODE_ENV || 'not set',
+    vercelEnv: process.env.VERCEL_ENV || 'not set',
   };
 
   try {

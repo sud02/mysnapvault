@@ -4,10 +4,28 @@ export type Snap = { name: string; url: string; updated_at?: string | null };
 
 export async function listSnaps(): Promise<Snap[]> {
   try {
+    // Check environment variables first
+    if (!process.env.SUPABASE_URL) {
+      console.error('❌ CRITICAL: SUPABASE_URL is not set!');
+      console.error('   → Go to Vercel Dashboard → Settings → Environment Variables');
+      console.error('   → Add SUPABASE_URL=https://your-project.supabase.co');
+      console.error('   → Then REDEPLOY your project');
+      return [];
+    }
+    
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('❌ CRITICAL: SUPABASE_SERVICE_ROLE_KEY is not set!');
+      console.error('   → Go to Vercel Dashboard → Settings → Environment Variables');
+      console.error('   → Add SUPABASE_SERVICE_ROLE_KEY=your_key_here');
+      console.error('   → Then REDEPLOY your project');
+      return [];
+    }
+    
     const supabase = getSupabaseAdmin();
     console.log(`📦 Listing files from bucket: "${BUCKET}"`);
-    console.log(`📦 Supabase URL: ${process.env.SUPABASE_URL ? 'Set' : 'NOT SET'}`);
-    console.log(`📦 Bucket name: "${BUCKET}"`);
+    console.log(`📦 Supabase URL: ${process.env.SUPABASE_URL.substring(0, 30)}...`);
+    console.log(`📦 Bucket name from env: "${process.env.SNAPS_BUCKET || 'NOT SET (using default)'}"`);
+    console.log(`📦 Bucket name used: "${BUCKET}"`);
     
     const { data: files, error } = await supabase.storage
       .from(BUCKET)
@@ -18,9 +36,18 @@ export async function listSnaps(): Promise<Snap[]> {
     if (error) {
       console.error('❌ Error listing snaps:', error);
       console.error('❌ Error details:', JSON.stringify(error, null, 2));
-      // If bucket doesn't exist, try lowercase version
+      
+      // Specific error messages
       if (error.message?.includes('not found') || error.message?.includes('does not exist')) {
-        console.log(`⚠️  Bucket "${BUCKET}" not found. Check if bucket name matches exactly in Supabase.`);
+        console.error(`⚠️  Bucket "${BUCKET}" not found in Supabase!`);
+        console.error(`   → Check Supabase Dashboard → Storage`);
+        console.error(`   → Bucket name must match EXACTLY (case-sensitive)`);
+        console.error(`   → Current bucket name: "${BUCKET}"`);
+        console.error(`   → Set SNAPS_BUCKET in Vercel to match your bucket name`);
+      } else if (error.message?.includes('JWT') || error.message?.includes('unauthorized')) {
+        console.error(`⚠️  Authentication failed!`);
+        console.error(`   → Check SUPABASE_SERVICE_ROLE_KEY in Vercel`);
+        console.error(`   → Get it from: Supabase Dashboard → Settings → API → Service Role Key`);
       }
       return [];
     }
