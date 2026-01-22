@@ -19,9 +19,26 @@ export default async function Page({ searchParams }: PageProps) {
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
   const currentDay = now.getDate();
+  
+  // Log snap loading status
+  console.log(`📊 Total snaps loaded: ${snaps.length}`);
+  if (snaps.length === 0) {
+    console.error('❌ NO SNAPS FOUND! Check:');
+    console.error('   1. Supabase bucket name matches SNAPS_BUCKET env var');
+    console.error('   2. Bucket is public');
+    console.error('   3. Environment variables are set in Vercel');
+  } else {
+    console.log(`📊 Sample snap: ${snaps[0]?.name} → ${snaps[0]?.updated_at}`);
+  }
 
   const parsedYear = Number.parseInt(searchParams?.year ?? '', 10);
-  const selectedYear = Number.isFinite(parsedYear) ? parsedYear : currentYear;
+  let selectedYear = Number.isFinite(parsedYear) ? parsedYear : currentYear;
+  
+  // Don't allow viewing future years - cap at current year
+  if (selectedYear > currentYear) {
+    console.warn(`⚠️  Attempted to view future year ${selectedYear}, capping to ${currentYear}`);
+    selectedYear = currentYear;
+  }
   const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
 
   const byMonthDay: Record<number, Record<number, Snap[]>> = {} as Record<number, Record<number, Snap[]>>;
@@ -135,11 +152,24 @@ export default async function Page({ searchParams }: PageProps) {
   for (const s of snaps) {
     if (!s.updated_at) continue;
     const d = new Date(s.updated_at);
-    yearsWithPhotos.add(d.getFullYear());
+    const year = d.getFullYear();
+    if (!isNaN(year) && year >= 2020 && year <= 2030) {
+      yearsWithPhotos.add(year);
+    }
   }
   const allAvailableYears = Array.from(yearsWithPhotos).sort((a, b) => b - a);
+  
+  // If no photos found, default to current year
   if (allAvailableYears.length === 0) {
     allAvailableYears.push(currentYear);
+    console.warn(`⚠️  No snaps found! Defaulting to current year: ${currentYear}`);
+    console.warn(`⚠️  Total snaps loaded: ${snaps.length}`);
+  }
+  
+  // Ensure selected year is valid - if viewing future year with no photos, redirect to current year
+  if (selectedYear > currentYear && !yearsWithPhotos.has(selectedYear)) {
+    console.warn(`⚠️  Selected year ${selectedYear} is in future and has no photos. Redirecting to ${currentYear}`);
+    // Note: Can't redirect in server component, but we'll handle it in the logic
   }
 
   return (
@@ -149,6 +179,18 @@ export default async function Page({ searchParams }: PageProps) {
         <YearSelector currentYear={selectedYear} availableYears={allAvailableYears} />
       </div>
       <VisitTracker />
+      {snaps.length === 0 && (
+        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
+          <h2 className="font-semibold text-yellow-800 mb-2">⚠️ No Images Found</h2>
+          <p className="text-sm text-yellow-700 mb-2">No snaps are loading from Supabase. Please check:</p>
+          <ul className="text-sm text-yellow-700 list-disc list-inside space-y-1">
+            <li>Environment variables are set in Vercel (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SNAPS_BUCKET)</li>
+            <li>Bucket name matches exactly (case-sensitive): Check Supabase Dashboard → Storage</li>
+            <li>Bucket is set to "Public" in Supabase</li>
+            <li>Visit <a href="/api/debug" className="underline" target="_blank">/api/debug</a> to see configuration status</li>
+          </ul>
+        </div>
+      )}
       <div className="space-y-10">
         {monthsToRender.map((monthIdx) => {
           const daysThisMonth = daysInMonth(selectedYear, monthIdx);
