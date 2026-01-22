@@ -1,11 +1,10 @@
 export const dynamic = 'force-dynamic';
-export const revalidate = 0; // Disable caching completely
+export const revalidate = 0;
 
 import Image from 'next/image';
 import { listSnaps, type Snap } from '@/lib/snaps';
 import { VisitTracker } from '@/components/VisitTracker';
 import YearSelector from '@/components/YearSelector';
-// Reverted: using monthly day grid view
 
 type PageProps = {
   searchParams?: {
@@ -19,24 +18,11 @@ export default async function Page({ searchParams }: PageProps) {
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
   const currentDay = now.getDate();
-  
-  // Log snap loading status
-  console.log(`📊 Total snaps loaded: ${snaps.length}`);
-  if (snaps.length === 0) {
-    console.error('❌ NO SNAPS FOUND! Check:');
-    console.error('   1. Supabase bucket name matches SNAPS_BUCKET env var');
-    console.error('   2. Bucket is public');
-    console.error('   3. Environment variables are set in Vercel');
-  } else {
-    console.log(`📊 Sample snap: ${snaps[0]?.name} → ${snaps[0]?.updated_at}`);
-  }
 
   const parsedYear = Number.parseInt(searchParams?.year ?? '', 10);
   let selectedYear = Number.isFinite(parsedYear) ? parsedYear : currentYear;
-  
-  // Don't allow viewing future years - cap at current year
+
   if (selectedYear > currentYear) {
-    console.warn(`⚠️  Attempted to view future year ${selectedYear}, capping to ${currentYear}`);
     selectedYear = currentYear;
   }
   const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
@@ -60,20 +46,6 @@ export default async function Page({ searchParams }: PageProps) {
       }
     }
   }
-  
-  // DEBUG: Log snaps by year
-  const snapsByYear: Record<number, number> = {};
-  for (const s of snaps) {
-    if (!s.updated_at) continue;
-    const d = new Date(s.updated_at);
-    const year = d.getFullYear();
-    snapsByYear[year] = (snapsByYear[year] || 0) + 1;
-  }
-  console.log(`📊 Snaps by year:`, snapsByYear);
-  console.log(`📊 Viewing year: ${selectedYear}, Found ${snaps.filter(s => {
-    if (!s.updated_at) return false;
-    return new Date(s.updated_at).getFullYear() === selectedYear;
-  }).length} snaps for this year`);
 
   const monthName = (month: number) =>
     new Intl.DateTimeFormat('en-US', { month: 'long' }).format(new Date(selectedYear, month, 1));
@@ -88,45 +60,29 @@ export default async function Page({ searchParams }: PageProps) {
     }
   }
 
-  // Determine month range to display
   const MIN_YEAR = 2024;
-  const MIN_MONTH_INDEX = 8; // September 2024
-
-  // Start with default range based on year
+  const MIN_MONTH_INDEX = 8;
   let lastMonthIndex: number;
   let firstMonthIndex: number;
 
   if (selectedYear < currentYear) {
-    // Past year: show all months, but start from September if it's 2024
     lastMonthIndex = 11;
     firstMonthIndex = selectedYear === MIN_YEAR ? MIN_MONTH_INDEX : 0;
   } else if (selectedYear === currentYear) {
-    // Current year: show from September 2024 (if viewing 2024) or January (if viewing 2025+) up to CURRENT MONTH ONLY
-    // This ensures future months don't appear until they become the current month
-    lastMonthIndex = currentMonth; // Only show up to current month
+    lastMonthIndex = currentMonth;
     firstMonthIndex = selectedYear === MIN_YEAR ? MIN_MONTH_INDEX : 0;
-    
-    // If we're in 2025 or later, start from January
     if (selectedYear >= 2025) {
       firstMonthIndex = 0;
     }
   } else {
-    // Future year: Don't show future years at all (they'll appear when they become current)
     lastMonthIndex = -1;
     firstMonthIndex = -1;
   }
 
-  // CRITICAL: Always include ALL months that have photos, but NEVER exceed current month
-  // This ensures if you have a photo in November 2025, it shows even if we're in December 2025
-  // But won't show January 2026 until we're actually in January 2026
   if (monthsWithPhotos.size > 0) {
     const minPhotoMonth = Math.min(...Array.from(monthsWithPhotos));
     const maxPhotoMonth = Math.max(...Array.from(monthsWithPhotos));
-    
-    // Expand range to include all months with photos
     firstMonthIndex = Math.min(firstMonthIndex, minPhotoMonth);
-    
-    // But cap at current month - never show future months
     if (selectedYear === currentYear) {
       lastMonthIndex = Math.min(Math.max(lastMonthIndex, maxPhotoMonth), currentMonth);
     } else {
@@ -134,13 +90,7 @@ export default async function Page({ searchParams }: PageProps) {
     }
   }
 
-  // DEBUG: Log what we're showing
-  console.log(`📅 Year: ${selectedYear}, Current: ${currentYear}, Current Month: ${currentMonth}`);
-  console.log(`📅 Months with photos: ${Array.from(monthsWithPhotos).join(', ')}`);
-  console.log(`📅 Range: ${firstMonthIndex} to ${lastMonthIndex}`);
-
   const monthsToRender: number[] = [];
-  // Only render if we have valid month indices and it's not a future year
   if (lastMonthIndex >= firstMonthIndex && lastMonthIndex >= 0 && firstMonthIndex >= 0 && firstMonthIndex <= 11) {
     for (let m = lastMonthIndex; m >= firstMonthIndex; m--) {
       monthsToRender.push(m);
@@ -158,18 +108,8 @@ export default async function Page({ searchParams }: PageProps) {
     }
   }
   const allAvailableYears = Array.from(yearsWithPhotos).sort((a, b) => b - a);
-  
-  // If no photos found, default to current year
   if (allAvailableYears.length === 0) {
     allAvailableYears.push(currentYear);
-    console.warn(`⚠️  No snaps found! Defaulting to current year: ${currentYear}`);
-    console.warn(`⚠️  Total snaps loaded: ${snaps.length}`);
-  }
-  
-  // Ensure selected year is valid - if viewing future year with no photos, redirect to current year
-  if (selectedYear > currentYear && !yearsWithPhotos.has(selectedYear)) {
-    console.warn(`⚠️  Selected year ${selectedYear} is in future and has no photos. Redirecting to ${currentYear}`);
-    // Note: Can't redirect in server component, but we'll handle it in the logic
   }
 
   return (
@@ -179,18 +119,6 @@ export default async function Page({ searchParams }: PageProps) {
         <YearSelector currentYear={selectedYear} availableYears={allAvailableYears} />
       </div>
       <VisitTracker />
-      {snaps.length === 0 && (
-        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
-          <h2 className="font-semibold text-yellow-800 mb-2">⚠️ No Images Found</h2>
-          <p className="text-sm text-yellow-700 mb-2">No snaps are loading from Supabase. Please check:</p>
-          <ul className="text-sm text-yellow-700 list-disc list-inside space-y-1">
-            <li>Environment variables are set in Vercel (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SNAPS_BUCKET)</li>
-            <li>Bucket name matches exactly (case-sensitive): Check Supabase Dashboard → Storage</li>
-            <li>Bucket is set to "Public" in Supabase</li>
-            <li>Visit <a href="/api/debug" className="underline" target="_blank">/api/debug</a> to see configuration status</li>
-          </ul>
-        </div>
-      )}
       <div className="space-y-10">
         {monthsToRender.map((monthIdx) => {
           const daysThisMonth = daysInMonth(selectedYear, monthIdx);
