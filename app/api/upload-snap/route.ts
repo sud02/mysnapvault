@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     const { data, error } = await supabase.storage
       .from(BUCKET)
       .upload(fileName, buffer, {
-        contentType: file.type || 'application/octet-stream',
+      contentType: file.type || 'application/octet-stream',
         cacheControl: '2592000', // 30 days
         upsert: false,
       });

@@ -26,7 +26,7 @@ export function VisitTracker() {
     const path = window.location.pathname || '/';
 
     // Location tracking commented out - only tracking page visits without geolocation
-    void sendTrack(path);
+          void sendTrack(path);
     
     // if (!('geolocation' in navigator)) {
     //   void sendTrack(path);

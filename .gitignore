@@ -4,7 +4,7 @@ node_modules
 out
 .env
 .env.*
-!.env.local
+.env.local
 dist
 .clinerules/byterover-rules.md
 .kilocode/rules/byterover-rules.md

@@ -17,7 +17,6 @@ export default function UploadPage() {
     // Default to today's date
     return getTodayLocal();
   });
-  const [maxDate] = useState(() => getTodayLocal()); // Set max date once on mount
   const [status, setStatus] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -67,13 +66,23 @@ export default function UploadPage() {
           <input
             type="date"
             value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            max={maxDate}
+            onChange={(e) => {
+              const newDate = e.target.value;
+              const today = getTodayLocal();
+              // Allow any date up to today
+              if (newDate <= today) {
+                setSelectedDate(newDate);
+              } else {
+                setStatus('Cannot select future dates');
+                setTimeout(() => setStatus(null), 2000);
+              }
+            }}
+            max={getTodayLocal()}
             min="2020-01-01"
             className="w-full rounded-md border px-3 py-2"
             required
           />
-          <p className="text-xs text-gray-500">You can select today or any date in the past</p>
+          <p className="text-xs text-gray-500">Select any date from 2020 to today</p>
         </div>
         <div className="space-y-2">
           <label className="block text-sm font-medium">Upload Secret</label>
