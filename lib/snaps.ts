@@ -6,6 +6,8 @@ export async function listSnaps(): Promise<Snap[]> {
   try {
     const supabase = getSupabaseAdmin();
     console.log(`📦 Listing files from bucket: "${BUCKET}"`);
+    console.log(`📦 Supabase URL: ${process.env.SUPABASE_URL ? 'Set' : 'NOT SET'}`);
+    console.log(`📦 Bucket name: "${BUCKET}"`);
     
     const { data: files, error } = await supabase.storage
       .from(BUCKET)
@@ -15,6 +17,11 @@ export async function listSnaps(): Promise<Snap[]> {
 
     if (error) {
       console.error('❌ Error listing snaps:', error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
+      // If bucket doesn't exist, try lowercase version
+      if (error.message?.includes('not found') || error.message?.includes('does not exist')) {
+        console.log(`⚠️  Bucket "${BUCKET}" not found. Check if bucket name matches exactly in Supabase.`);
+      }
       return [];
     }
 
