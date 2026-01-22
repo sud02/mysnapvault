@@ -79,33 +79,42 @@ export default async function Page({ searchParams }: PageProps) {
   let lastMonthIndex: number;
   let firstMonthIndex: number;
 
-  // For 2025 and beyond, ALWAYS show all 12 months
-  if (selectedYear >= 2025) {
-    firstMonthIndex = 0;
-    lastMonthIndex = 11;
-  } else if (selectedYear < currentYear) {
+  if (selectedYear < currentYear) {
     // Past year: show all months, but start from September if it's 2024
     lastMonthIndex = 11;
     firstMonthIndex = selectedYear === MIN_YEAR ? MIN_MONTH_INDEX : 0;
   } else if (selectedYear === currentYear) {
-    // Current year (2024): show from September to current month
-    lastMonthIndex = currentMonth;
+    // Current year: show from September 2024 (if viewing 2024) or January (if viewing 2025+) up to CURRENT MONTH ONLY
+    // This ensures future months don't appear until they become the current month
+    lastMonthIndex = currentMonth; // Only show up to current month
     firstMonthIndex = selectedYear === MIN_YEAR ? MIN_MONTH_INDEX : 0;
+    
+    // If we're in 2025 or later, start from January
+    if (selectedYear >= 2025) {
+      firstMonthIndex = 0;
+    }
   } else {
-    // Future year: show all months (0-11)
-    lastMonthIndex = 11;
-    firstMonthIndex = 0;
+    // Future year: Don't show future years at all (they'll appear when they become current)
+    lastMonthIndex = -1;
+    firstMonthIndex = -1;
   }
 
-  // CRITICAL: Always include ALL months that have photos, even if outside the normal range
+  // CRITICAL: Always include ALL months that have photos, but NEVER exceed current month
   // This ensures if you have a photo in November 2025, it shows even if we're in December 2025
+  // But won't show January 2026 until we're actually in January 2026
   if (monthsWithPhotos.size > 0) {
     const minPhotoMonth = Math.min(...Array.from(monthsWithPhotos));
     const maxPhotoMonth = Math.max(...Array.from(monthsWithPhotos));
     
     // Expand range to include all months with photos
     firstMonthIndex = Math.min(firstMonthIndex, minPhotoMonth);
-    lastMonthIndex = Math.max(lastMonthIndex, maxPhotoMonth);
+    
+    // But cap at current month - never show future months
+    if (selectedYear === currentYear) {
+      lastMonthIndex = Math.min(Math.max(lastMonthIndex, maxPhotoMonth), currentMonth);
+    } else {
+      lastMonthIndex = Math.max(lastMonthIndex, maxPhotoMonth);
+    }
   }
 
   // DEBUG: Log what we're showing
@@ -114,7 +123,8 @@ export default async function Page({ searchParams }: PageProps) {
   console.log(`📅 Range: ${firstMonthIndex} to ${lastMonthIndex}`);
 
   const monthsToRender: number[] = [];
-  if (lastMonthIndex >= firstMonthIndex && lastMonthIndex >= 0 && firstMonthIndex <= 11) {
+  // Only render if we have valid month indices and it's not a future year
+  if (lastMonthIndex >= firstMonthIndex && lastMonthIndex >= 0 && firstMonthIndex >= 0 && firstMonthIndex <= 11) {
     for (let m = lastMonthIndex; m >= firstMonthIndex; m--) {
       monthsToRender.push(m);
     }
