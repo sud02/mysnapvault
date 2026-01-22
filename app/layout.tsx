@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   description: 'Public photo gallery with private uploader',
 };
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
